@@ -7,7 +7,18 @@
 - 模型管理（`/models`）：CRUD，支持 DashScope、OpenAI、Anthropic、自定义（baseUrl / apiKey）
 - 智能体管理（`/agents`）：CRUD，字段含名称、关联模型、系统提示词、工具列表
 - 工具管理（`/tools`）：解析系统中 `@Tool` 注解标注的工具，展示名称、描述、参数 JSON Schema；内置查天气、查日期示例工具，不落库
+- 流式对话（侧边栏「流式对话」弹窗）：选择智能体进行流式对话；切换智能体或点击「新会话」清空消息并生成新 sessionId
 - 无登录、无权限控制，经典管理后台布局
+
+## 全局智能体
+
+- 启动时注册**全局唯一** `ReActAgent` Bean（`config/AgentScopeConfig.java`），所有会话共用
+- 全局默认模型：DashScope `qwen-flash`，apiKey 读环境变量 **`YOKA_DASHSCOPE_API_KEY`**（未设置则默认模型不可用并打警告日志）
+- 对话时按所选智能体的配置动态加载：
+  - 系统提示词 → `DynamicAgentMiddleware#onSystemPrompt` 替换
+  - 模型 → `DynamicAgentMiddleware#onModelCall` 切换（`ModelFactory` 按 model_config 记录实时构建，DashScope 的 apiKey 留空时回退环境变量）
+  - 工具 → `DynamicAgentMiddleware#onReasoning` 过滤工具 schema，全局工具箱保持不变
+- 会话历史由 AgentScope 按 (userId, sessionId) 自动维护（内存态，重启清空）；userId 暂固定为 `default`
 
 ## 技术栈
 

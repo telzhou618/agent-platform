@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.service.AgentInfoService;
@@ -51,6 +52,7 @@ public class AgentView extends VerticalLayout {
     private final AgentInfoService agentService;
     private final ModelConfigService modelService;
     private final ToolService toolService;
+    private final ChatService chatService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
@@ -58,10 +60,12 @@ public class AgentView extends VerticalLayout {
     /** 模型 ID -> 模型，供 Grid 展示名称 */
     private Map<Long, ModelConfig> modelMap = Map.of();
 
-    public AgentView(AgentInfoService agentService, ModelConfigService modelService, ToolService toolService) {
+    public AgentView(AgentInfoService agentService, ModelConfigService modelService,
+                     ToolService toolService, ChatService chatService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
+        this.chatService = chatService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -88,7 +92,7 @@ public class AgentView extends VerticalLayout {
         grid.addComponentColumn(a -> toolBadges(a.getTools())).setHeader("工具");
         grid.addColumn(a -> StrUtil.nullToEmpty(a.getDescription())).setHeader("描述");
         grid.addColumn(a -> DateUtil.format(a.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("创建时间");
-        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("180px").setFlexGrow(0);
+        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("240px").setFlexGrow(0);
         grid.setSizeFull();
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
@@ -97,11 +101,13 @@ public class AgentView extends VerticalLayout {
     }
 
     private Component actionButtons(AgentInfo agent) {
+        Button chat = new Button("对话", e -> new ChatDialog(agentService, chatService, agent).open());
+        chat.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button edit = new Button("编辑", e -> openDialog(agent));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button("删除", e -> confirmDelete(agent));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        return new HorizontalLayout(edit, delete);
+        return new HorizontalLayout(chat, edit, delete);
     }
 
     /** 工具名列表渲染为徽标组 */

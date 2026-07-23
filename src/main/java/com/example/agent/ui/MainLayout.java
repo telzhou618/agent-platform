@@ -1,5 +1,7 @@
 package com.example.agent.ui;
 
+import com.example.agent.system.agent.ChatService;
+import com.example.agent.system.service.AgentInfoService;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
@@ -21,7 +23,7 @@ public class MainLayout extends AppLayout {
 
     private final Div footer = new Div();
 
-    public MainLayout() {
+    public MainLayout(AgentInfoService agentInfoService, ChatService chatService) {
         Icon logoIcon = new Icon(VaadinIcon.MAGIC);
         logoIcon.getStyle().set("color", "var(--lumo-primary-color)");
         H1 title = new H1("agent-platform");
@@ -46,6 +48,16 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
         addToDrawer(nav);
+
+        // 流式对话：点击弹起对话窗口（SideNavItem 不支持点击事件，用同款图标的三级按钮放在导航下方）
+        Button chat = new Button("流式对话", new Icon(VaadinIcon.CHAT),
+                e -> new ChatDialog(agentInfoService, chatService).open());
+        chat.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        chat.getStyle()
+                .set("padding-left", "var(--lumo-space-m)")
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("color", "var(--lumo-body-text-color)");
+        addToDrawer(chat);
 
         // 主内容区底部居中的版权信息
         Span copyright = new Span("Copyright © " + Year.now().getValue() + " agent-platform 版权所有");

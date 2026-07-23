@@ -1,0 +1,77 @@
+package com.example.agent;
+
+import cn.hutool.core.util.StrUtil;
+import com.example.agent.system.agent.ChatService;
+import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.service.AgentInfoService;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * 流式对话端到端测试：真实调用 DashScope（需要环境变量 YOKA_DASHSCOPE_API_KEY 和本地 MySQL）。
+ * 验证动态模型加载、工具调用、会话记忆隔离。
+ */
+@SpringBootTest
+class ChatServiceTest {
+
+    @Autowired
+    private ChatService chatService;
+    @Autowired
+    private AgentInfoService agentInfoService;
+
+    @BeforeAll
+    static void requireApiKey() {
+        Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("YOKA_DASHSCOPE_API_KEY")),
+                "未设置 YOKA_DASHSCOPE_API_KEY，跳过端到端测试");
+    }
+
+    private String chat(String sessionId, Long agentId, String text) {
+        return chatService.streamChat(sessionId, agentId, text)
+                .collect(StringBuilder::new, StringBuilder::append)
+                .block()
+                .toString();
+    }
+
+    /** 动态模型 + 动态工具：天气小助手应调用 get_weather / get_current_time 回答 */
+    @Test
+    void streamChatWithTools() {
+        AgentInfo agent = agentInfoService.lambdaQuery().eq(AgentInfo::getName, "天气小助手").one();
+        String reply = chat(chatService.newSessionId(), agent.getId(), "北京现在天气怎么样？今天几号？");
+        System.out.println("[工具调用回复] " + reply);
+        assertFalse(reply.isBlank());
+        //  mock 工具返回“气温 N℃”“yyyy-MM-dd”，回复中出现即证明工具被真正调用
+        assertTrue(reply.contains("℃") || reply.matches(".*\\d{4}[-年]\\d{1,2}.*"),
+                "回复中应包含工具返回的天气或日期信息");
+    }
+
+    /** 动态系统提示词：智能体应按配置的人设回答 */
+    @Test
+    void dynamicSysPrompt() {
+        AgentInfo agent = agentInfoService.lambdaQuery().eq(AgentInfo::getName, "天气小助手").one();
+        String reply = chat(chatService.newSessionId(), agent.getId(), "你是谁？");
+        System.out.println("[人设回复] " + reply);
+        assertFalse(reply.isBlank());
+        assertTrue(reply.contains("天气"), "回复应体现天气助手人设");
+    }
+
+    /** 会话记忆：同 sessionId 记得上下文；新 sessionId 不记得（用生僻词防止模型瞎猜） */
+    @Test
+    void sessionMemory() {
+        String token = "荧惑星城";
+        String sessionId = chatService.newSessionId();
+        chat(sessionId, null, "记住：我最喜欢的城市是" + token + "。");
+        String remembered = chat(sessionId, null, "我最喜欢的城市是哪个？");
+        System.out.println("[同会话回复] " + remembered);
+        assertTrue(remembered.contains(token), "同一会话应记得上下文");
+
+        String newSession = chat(chatService.newSessionId(), null, "我最喜欢的城市是哪个？");
+        System.out.println("[新会话回复] " + newSession);
+        assertFalse(newSession.contains(token), "新会话不应记得旧会话内容");
+    }
+}

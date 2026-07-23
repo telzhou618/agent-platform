@@ -7,7 +7,6 @@ import io.agentscope.core.tool.Tool;
 import io.agentscope.core.tool.Toolkit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopProxyUtils;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +22,7 @@ import java.util.Set;
  */
 @Slf4j
 @Service
-public class ToolService implements SmartInitializingSingleton {
+public class ToolService {
 
     private final ApplicationContext applicationContext;
 
@@ -33,18 +32,23 @@ public class ToolService implements SmartInitializingSingleton {
         this.applicationContext = applicationContext;
     }
 
-    /** 所有单例 Bean 就绪后扫描并解析工具 */
-    @Override
-    public void afterSingletonsInstantiated() {
+    /**
+     * 构建全局工具箱：扫描并注册全部系统工具。
+     * 由 AgentScopeConfig#toolkit 调用，必须在 ReActAgent 创建前完成——
+     * ReActAgent 构建时即固化工具箱快照，之后注册的工具不会生效。
+     * 工具一律不分组（ungrouped）：AgentScope 每次对话会用会话状态覆盖工具箱的激活组，
+     * 分组工具对新会话不可见，而不分组工具始终对模型可见（再由 DynamicAgentMiddleware 按智能体配置过滤）。
+     */
+    public Toolkit buildToolkit() {
         Toolkit toolkit = new Toolkit();
         // 工具名 -> 来源类名
         List<ToolInfo> result = new ArrayList<>();
         for (String beanName : applicationContext.getBeanDefinitionNames()) {
-            Object bean = applicationContext.getBean(beanName);
-            Class<?> targetClass = AopProxyUtils.ultimateTargetClass(bean);
-            if (!hasToolMethod(targetClass)) {
+            Class<?> type = applicationContext.getType(beanName);
+            if (type == null || !hasToolMethod(type)) {
                 continue;
             }
+            Object bean = applicationContext.getBean(beanName);
             Set<String> before = new HashSet<>(toolkit.getToolNames());
             toolkit.registerTool(bean);
             Set<String> added = new HashSet<>(toolkit.getToolNames());
@@ -56,13 +60,14 @@ public class ToolService implements SmartInitializingSingleton {
                 info.setDescription(agentTool.getDescription());
                 info.setParamsJson(JSONUtil.toJsonPrettyStr(agentTool.getParameters()));
                 info.setType("系统工具");
-                info.setSourceClass(targetClass.getSimpleName());
+                info.setSourceClass(AopProxyUtils.ultimateTargetClass(bean).getSimpleName());
                 result.add(info);
             }
-            log.info("注册系统工具：{} -> {}", targetClass.getSimpleName(), added);
+            log.info("注册系统工具：{} -> {}", type.getSimpleName(), added);
         }
         result.sort((a, b) -> a.getName().compareTo(b.getName()));
         this.tools = List.copyOf(result);
+        return toolkit;
     }
 
     /** 全部系统工具 */

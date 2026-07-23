@@ -44,7 +44,7 @@ create table agent_info (
 -- 种子数据
 -- ----------------------------
 insert into model_config (name, provider, model, base_url, api_key, remark, create_time, update_time) values
-('通义千问 Plus', 'dashscope', 'qwen-plus', 'https://dashscope.aliyuncs.com/compatible-mode/v1', '', '阿里云百炼平台', now(), now()),
+('通义千问 Flash', 'dashscope', 'qwen-flash', null, '', '阿里云百炼平台，base_url 留空用默认端点', now(), now()),
 ('GPT-4o', 'openai', 'gpt-4o', 'https://api.openai.com/v1', '', 'OpenAI 官方', now(), now()),
 ('Claude Sonnet', 'anthropic', 'claude-sonnet-4-20250514', 'https://api.anthropic.com', '', 'Anthropic 官方', now(), now());
 
