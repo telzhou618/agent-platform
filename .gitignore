@@ -1,0 +1,20 @@
+target/
+*.class
+*.jar
+!.mvn/wrapper/*.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vscode/
+
+# Vaadin / frontend 生成物
+node_modules/
+src/main/frontend/generated/
+src/main/frontend/index.html
+vite.generated.ts

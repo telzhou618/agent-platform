@@ -1,0 +1,14 @@
+在当前目录下开发一个综合性的Agent管理平台，现实现如下基础功能。
+
+1.  技术栈：AgentScope-java2.0 + Springboot3 + Vaadin + Mysql + Maven + MyBatis-plus + Java17。
+2.  使用 Vaadin 的经典管理后台布局。
+3.  左侧菜单包括如下：
+        1. 模型管理：路由/models，CRUD,需要表存储,支持添加 Dashscope、openai、anthropic、自定义(需要baseUrl或token)
+        2. 智能体管理：路由 /agents, CRUD，需要表存储， 字段有智能体名称、模型、系统提示词、工具列表等。
+        3. 工具管理：路由 tools， 解析系统中有@Tool注解标主的工具列表，字段有工具名称、描述、参数JSON等信息，不需要表，类型为系统工具，写一个查天气和日期的工具做为示例，将来扩展其他工具。
+4.	工具类多使用 hutool 简化代码。
+5.	代码简洁，不重复造轮子。
+6.  先只做这几个基本管理功能的，其他的再说。
+7.  合理布局结构，不需要登录、不需权限控制。
+8.  用中文和我对话。
+9.  框架代码风格参考项目：D:\github\vaadin-admin
