@@ -118,22 +118,20 @@ public class ChatDialog extends Dialog {
         if (StrUtil.isBlank(text)) {
             return;
         }
-        addBubble(text, true);
-        Div reply = addBubble("", false);
-        StringBuilder acc = new StringBuilder();
+        addUserBubble(text);
+        AssistantMessageView reply = new AssistantMessageView();
+        messages.add(reply);
+        scrollToBottom();
         UI ui = UI.getCurrent();
         input.setEnabled(false);
         chatService.streamChat(sessionId, currentAgent == null ? null : currentAgent.getId(), text)
                 .subscribe(
-                        chunk -> {
-                            acc.append(chunk);
-                            ui.access(() -> {
-                                reply.setText(acc.toString());
-                                scrollToBottom();
-                            });
-                        },
+                        chunk -> ui.access(() -> {
+                            reply.accept(chunk);
+                            scrollToBottom();
+                        }),
                         error -> ui.access(() -> {
-                            reply.setText("对话出错：" + error.getMessage());
+                            reply.showError("对话出错：" + error.getMessage());
                             input.setEnabled(true);
                             Notification.show("对话出错：" + error.getMessage(),
                                     3000, Notification.Position.MIDDLE);
@@ -141,31 +139,17 @@ public class ChatDialog extends Dialog {
                         () -> ui.access(() -> input.setEnabled(true)));
     }
 
-    /** 添加一条消息气泡：user 靠右主色，助手靠左灰底 */
-    private Div addBubble(String text, boolean user) {
+    /** 用户消息气泡：靠右主色 */
+    private void addUserBubble(String text) {
         Div bubble = new Div();
         bubble.setText(text);
-        bubble.getStyle()
-                .set("padding", "var(--lumo-space-s) var(--lumo-space-m)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("max-width", "80%")
-                .set("white-space", "pre-wrap")
-                .set("font-size", "var(--lumo-font-size-m)");
+        bubble.addClassName("user-bubble");
         HorizontalLayout row = new HorizontalLayout(bubble);
         row.setWidthFull();
         row.setPadding(false);
-        if (user) {
-            row.setJustifyContentMode(JustifyContentMode.END);
-            bubble.getStyle()
-                    .set("background", "var(--lumo-primary-color)")
-                    .set("color", "var(--lumo-primary-contrast-color)");
-        } else {
-            row.setJustifyContentMode(JustifyContentMode.START);
-            bubble.getStyle().set("background", "var(--lumo-contrast-5pct)");
-        }
+        row.setJustifyContentMode(JustifyContentMode.END);
         messages.add(row);
         scrollToBottom();
-        return bubble;
     }
 
     /** 系统提示行：居中灰色小字 */

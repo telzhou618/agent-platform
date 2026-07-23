@@ -1,6 +1,7 @@
 package com.example.agent;
 
 import cn.hutool.core.util.StrUtil;
+import com.example.agent.system.agent.ChatChunk;
 import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.service.AgentInfoService;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assumptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,10 +34,16 @@ class ChatServiceTest {
                 "未设置 YOKA_DASHSCOPE_API_KEY，跳过端到端测试");
     }
 
+    private List<ChatChunk> chatChunks(String sessionId, Long agentId, String text) {
+        return chatService.streamChat(sessionId, agentId, text).collectList().block();
+    }
+
+    /** 收集完整回复文本（只取 TEXT 增量） */
     private String chat(String sessionId, Long agentId, String text) {
-        return chatService.streamChat(sessionId, agentId, text)
-                .collect(StringBuilder::new, StringBuilder::append)
-                .block()
+        return chatChunks(sessionId, agentId, text).stream()
+                .filter(c -> c.kind() == ChatChunk.Kind.TEXT)
+                .map(ChatChunk::delta)
+                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
                 .toString();
     }
 
@@ -42,12 +51,23 @@ class ChatServiceTest {
     @Test
     void streamChatWithTools() {
         AgentInfo agent = agentInfoService.lambdaQuery().eq(AgentInfo::getName, "天气小助手").one();
-        String reply = chat(chatService.newSessionId(), agent.getId(), "北京现在天气怎么样？今天几号？");
+        List<ChatChunk> chunks = chatChunks(chatService.newSessionId(), agent.getId(),
+                "北京现在天气怎么样？今天几号？");
+        String reply = chunks.stream()
+                .filter(c -> c.kind() == ChatChunk.Kind.TEXT)
+                .map(ChatChunk::delta)
+                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                .toString();
         System.out.println("[工具调用回复] " + reply);
         assertFalse(reply.isBlank());
         //  mock 工具返回“气温 N℃”“yyyy-MM-dd”，回复中出现即证明工具被真正调用
         assertTrue(reply.contains("℃") || reply.matches(".*\\d{4}[-年]\\d{1,2}.*"),
                 "回复中应包含工具返回的天气或日期信息");
+        // 流中应携带完整的工具调用过程信息：开始 -> 结束（成功）
+        assertTrue(chunks.stream().anyMatch(c -> c.kind() == ChatChunk.Kind.TOOL_CALL_START),
+                "应输出工具调用开始信息");
+        assertTrue(chunks.stream().anyMatch(c -> c.kind() == ChatChunk.Kind.TOOL_CALL_END
+                && "success".equals(c.delta())), "工具应执行成功");
     }
 
     /** 动态系统提示词：智能体应按配置的人设回答 */

@@ -1,0 +1,107 @@
+
+
+/* ============ 流式对话 ============ */
+
+/* 用户消息气泡：靠右主色 */
+.user-bubble {
+    background: var(--lumo-primary-color);
+    color: var(--lumo-primary-contrast-color);
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-l);
+    max-width: 80%;
+    white-space: pre-wrap;
+    font-size: var(--lumo-font-size-m);
+}
+
+/* 助手 Markdown 气泡：靠左灰底 */
+.assistant-bubble {
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-l);
+    max-width: 80%;
+    align-self: flex-start;
+    font-size: var(--lumo-font-size-m);
+}
+
+/* Markdown 渲染内容排版 */
+.markdown p {
+    margin: 0 0 var(--lumo-space-xs) 0;
+}
+
+.markdown p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown ul,
+.markdown ol {
+    margin: var(--lumo-space-xs) 0;
+    padding-inline-start: var(--lumo-space-l);
+}
+
+.markdown pre {
+    background: var(--lumo-contrast-10pct);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    overflow-x: auto;
+}
+
+.markdown code {
+    font-size: 0.9em;
+}
+
+.markdown table {
+    border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+    border: 1px solid var(--lumo-contrast-20pct);
+    padding: 2px var(--lumo-space-s);
+}
+
+/* 思考过程折叠面板 */
+.thinking-panel {
+    max-width: 80%;
+    align-self: flex-start;
+}
+
+.thinking-content {
+    white-space: pre-wrap;
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+}
+
+/* 工具调用面板 */
+.tool-panel {
+    max-width: 80%;
+    align-self: flex-start;
+}
+
+.tool-panel-error {
+    color: var(--lumo-error-text-color);
+}
+
+.tool-panel-caption {
+    display: block;
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-xxs);
+    margin-bottom: 2px;
+}
+
+.tool-panel-pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: var(--lumo-font-size-xs);
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    margin-bottom: var(--lumo-space-xs);
+    max-height: 160px;
+    overflow: auto;
+}
+
+/* 助手错误提示 */
+.assistant-error {
+    color: var(--lumo-error-text-color);
+    font-size: var(--lumo-font-size-s);
+}
