@@ -5,6 +5,7 @@ import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.service.AgentInfoService;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -51,8 +52,8 @@ public class ChatDialog extends Dialog {
         this.agentInfoService = agentInfoService;
         this.chatService = chatService;
         setHeaderTitle("流式对话");
-        setWidth("760px");
-        setHeight("640px");
+        setWidth("min(1100px, 92vw)");
+        setHeight("82vh");
         setResizable(true);
         setDraggable(true);
 
@@ -119,7 +120,8 @@ public class ChatDialog extends Dialog {
             return;
         }
         addUserBubble(text);
-        AssistantMessageView reply = new AssistantMessageView();
+        String agentName = currentAgent == null ? "AI" : currentAgent.getName();
+        AssistantMessageView reply = new AssistantMessageView(agentName);
         messages.add(reply);
         scrollToBottom();
         UI ui = UI.getCurrent();
@@ -139,14 +141,17 @@ public class ChatDialog extends Dialog {
                         () -> ui.access(() -> input.setEnabled(true)));
     }
 
-    /** 用户消息气泡：靠右主色 */
+    /** 用户消息气泡：靠右主色，带用户头像 */
     private void addUserBubble(String text) {
         Div bubble = new Div();
         bubble.setText(text);
         bubble.addClassName("user-bubble");
-        HorizontalLayout row = new HorizontalLayout(bubble);
+        Avatar avatar = new Avatar("我");
+        avatar.addClassName("chat-avatar");
+        HorizontalLayout row = new HorizontalLayout(bubble, avatar);
         row.setWidthFull();
         row.setPadding(false);
+        row.setAlignItems(Alignment.START);
         row.setJustifyContentMode(JustifyContentMode.END);
         messages.add(row);
         scrollToBottom();

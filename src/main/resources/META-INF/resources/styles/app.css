@@ -105,3 +105,9 @@
     color: var(--lumo-error-text-color);
     font-size: var(--lumo-font-size-s);
 }
+
+/* 对话头像：不被压缩，与首行内容顶部对齐 */
+.chat-avatar {
+    flex-shrink: 0;
+    margin-top: 2px;
+}

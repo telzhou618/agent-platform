@@ -1,16 +1,20 @@
 package com.example.agent.ui;
 
 import com.example.agent.system.agent.ChatChunk;
+import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 /**
- * 一条助手消息：按到达顺序排列思考面板、工具调用面板和 Markdown 文本气泡。
- * {@link #accept(ChatChunk)} 消费流式增量并更新对应区块。
+ * 一条助手消息：左侧智能体头像，右侧按到达顺序排列思考面板、工具调用面板和
+ * Markdown 文本气泡。{@link #accept(ChatChunk)} 消费流式增量并更新对应区块。
  */
-class AssistantMessageView extends VerticalLayout {
+class AssistantMessageView extends HorizontalLayout {
+
+    private final VerticalLayout content = new VerticalLayout();
 
     private Details thinkingPanel;
     private Div thinkingContent;
@@ -21,11 +25,24 @@ class AssistantMessageView extends VerticalLayout {
 
     private ToolCallPanel toolPanel;
 
-    AssistantMessageView() {
+    AssistantMessageView(String agentName) {
+        Avatar avatar = new Avatar(agentName);
+        avatar.setAbbreviation(abbr(agentName));
+        avatar.addClassName("chat-avatar");
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.getStyle().set("gap", "var(--lumo-space-xs)");
+        content.setWidthFull();
+        add(avatar, content);
         setPadding(false);
-        setSpacing(false);
-        getStyle().set("gap", "var(--lumo-space-xs)");
         setWidthFull();
+        setAlignItems(Alignment.START);
+        expand(content);
+    }
+
+    /** 头像缩写：取名称首字符，无名（全局默认助手）用 AI */
+    private static String abbr(String name) {
+        return name == null || name.isBlank() ? "AI" : name.substring(0, 1);
     }
 
     void accept(ChatChunk chunk) {
@@ -56,7 +73,7 @@ class AssistantMessageView extends VerticalLayout {
         Div error = new Div();
         error.setText(message);
         error.addClassName("assistant-error");
-        add(error);
+        content.add(error);
     }
 
     /** 思考过程：折叠面板，流式期间展开，开始输出其它内容时自动收起 */
@@ -67,7 +84,7 @@ class AssistantMessageView extends VerticalLayout {
             thinkingPanel = new Details("思考过程", thinkingContent);
             thinkingPanel.setOpened(true);
             thinkingPanel.addClassName("thinking-panel");
-            add(thinkingPanel);
+            content.add(thinkingPanel);
         }
         thinkingAcc.append(delta);
         thinkingContent.setText(thinkingAcc.toString());
@@ -79,7 +96,7 @@ class AssistantMessageView extends VerticalLayout {
         if (textBubble == null) {
             textBubble = new Div();
             textBubble.addClassNames("assistant-bubble", "markdown");
-            add(textBubble);
+            content.add(textBubble);
         }
         textAcc.append(delta);
         textBubble.getElement().setProperty("innerHTML",
@@ -92,7 +109,7 @@ class AssistantMessageView extends VerticalLayout {
         textBubble = null;
         textAcc.setLength(0);
         toolPanel = new ToolCallPanel(name);
-        add(toolPanel);
+        content.add(toolPanel);
     }
 
     private void closeThinking() {
