@@ -133,6 +133,11 @@ public class AgentRegistry {
             }
         }
         for (McpServer server : mcpServers) {
+            // 先做轻量探测：不可达直接跳过，不让 SDK 初始化失败刷错误堆栈
+            if (!mcpClientFactory.reachable(server)) {
+                log.warn("MCP 服务「{}」（{}）不可达，已跳过挂载", server.getName(), server.getUrl());
+                continue;
+            }
             try {
                 McpClientWrapper client = mcpClientFactory.create(server);
                 agentToolkit.registerMcpClient(client).block();

@@ -22,6 +22,28 @@ import java.util.Map;
 public class McpClientFactory {
 
     private static final int DEFAULT_TIMEOUT_MS = 30000;
+    /** 可达性探测的连接超时（毫秒）：只做快速 TCP 探测，避免拖慢启动 */
+    private static final int PROBE_TIMEOUT_MS = 3000;
+
+    /**
+     * 轻量可达性探测：TCP 能连上即视为可达。
+     * 用于挂载/初始化前预检——MCP 服务不可达时直接跳过，
+     * 避免 SDK 初始化失败在日志里刷大段错误堆栈。
+     */
+    public boolean reachable(McpServer server) {
+        try {
+            java.net.URI uri = java.net.URI.create(server.getUrl());
+            int port = uri.getPort() == -1
+                    ? ("https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80)
+                    : uri.getPort();
+            try (java.net.Socket socket = new java.net.Socket()) {
+                socket.connect(new java.net.InetSocketAddress(uri.getHost(), port), PROBE_TIMEOUT_MS);
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * 按配置创建 MCP 客户端（尚未初始化）。
@@ -47,6 +69,9 @@ public class McpClientFactory {
 
     /** 连接验证：返回 null 表示可用，否则返回错误信息 */
     public String testConnection(McpServer server) {
+        if (!reachable(server)) {
+            return "无法连接 " + server.getUrl();
+        }
         try (McpClientWrapper client = create(server)) {
             client.initialize().block();
             return null;
@@ -57,6 +82,9 @@ public class McpClientFactory {
 
     /** 从 MCP 服务实时拉取工具列表 */
     public List<McpSchema.Tool> listTools(McpServer server) {
+        if (!reachable(server)) {
+            throw new IllegalStateException("无法连接 " + server.getUrl());
+        }
         try (McpClientWrapper client = create(server)) {
             client.initialize().block();
             return client.listTools().block();
