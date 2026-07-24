@@ -166,9 +166,11 @@ public class McpServerView extends VerticalLayout {
         name.setRequiredIndicatorVisible(true);
         type.setRequiredIndicatorVisible(true);
         url.setRequiredIndicatorVisible(true);
+        // 新增时的默认值写在 bean 上：readBean 会用 bean 值刷新字段，
+        // 若直接 setValue 会被随后的 readBean 覆盖清空
         if (isNew) {
-            type.setValue(McpServer.TYPE_STREAMABLE_HTTP);
-            timeout.setValue(30000);
+            server.setType(McpServer.TYPE_STREAMABLE_HTTP);
+            server.setTimeout(30000);
         }
         binder.readBean(server);
 
