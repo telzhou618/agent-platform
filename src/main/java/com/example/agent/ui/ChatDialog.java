@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.messages.MessageInput;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -135,8 +134,7 @@ public class ChatDialog extends Dialog {
                         error -> ui.access(() -> {
                             reply.showError("对话出错：" + error.getMessage());
                             input.setEnabled(true);
-                            Notification.show("对话出错：" + error.getMessage(),
-                                    3000, Notification.Position.MIDDLE);
+                            Notify.error("对话出错：" + error.getMessage());
                         }),
                         () -> ui.access(() -> input.setEnabled(true)));
     }

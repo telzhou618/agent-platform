@@ -28,7 +28,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -250,9 +249,9 @@ public class AgentView extends VerticalLayout {
                 agentService.saveAgent(agent);
                 dialog.close();
                 refresh();
-                Notification.show("保存成功");
+                Notify.success("保存成功");
             } catch (Exception ex) {
-                Notification.show(ex.getMessage(), 3000, Notification.Position.MIDDLE);
+                Notify.error(ex.getMessage());
             }
         });
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -266,9 +265,9 @@ public class AgentView extends VerticalLayout {
             try {
                 agentService.deleteAgent(agent.getId());
                 refresh();
-                Notification.show("删除成功");
+                Notify.success("删除成功");
             } catch (Exception ex) {
-                Notification.show(ex.getMessage(), 3000, Notification.Position.MIDDLE);
+                Notify.error(ex.getMessage());
             }
         });
         dialog.setConfirmButtonTheme("error primary");
