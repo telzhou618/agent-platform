@@ -51,12 +51,19 @@
 
 .markdown table {
     border-collapse: collapse;
+    margin: var(--lumo-space-xs) 0;
+    font-size: var(--lumo-font-size-s);
 }
 
 .markdown th,
 .markdown td {
-    border: 1px solid var(--lumo-contrast-20pct);
-    padding: 2px var(--lumo-space-s);
+    border: 1px solid var(--lumo-contrast-30pct);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+}
+
+.markdown th {
+    background: var(--lumo-contrast-5pct);
+    font-weight: 600;
 }
 
 /* 思考过程折叠面板 */
