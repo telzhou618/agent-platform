@@ -2,9 +2,13 @@ package com.example.agent.config;
 
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,6 +33,7 @@ public class AgentBootstrap implements ApplicationRunner {
 
     private final AgentInfoService agentInfoService;
     private final ModelConfigService modelConfigService;
+    private final McpServerService mcpServerService;
     private final AgentRegistry agentRegistry;
 
     @Override
@@ -35,11 +41,14 @@ public class AgentBootstrap implements ApplicationRunner {
         try {
             Map<Long, ModelConfig> models = modelConfigService.list().stream()
                     .collect(Collectors.toMap(ModelConfig::getId, Function.identity()));
+            Map<Long, McpServer> mcpServers = mcpServerService.list().stream()
+                    .collect(Collectors.toMap(McpServer::getId, Function.identity()));
             List<AgentInfo> agents = agentInfoService.list();
             int ok = 0;
             for (AgentInfo agent : agents) {
                 try {
-                    agentRegistry.register(agent, models.get(agent.getModelId()));
+                    agentRegistry.register(agent, models.get(agent.getModelId()),
+                            mcpServersOf(agent, mcpServers));
                     ok++;
                 } catch (Exception e) {
                     log.error("注册智能体「{}」失败：{}", agent.getName(), e.getMessage());
@@ -49,5 +58,16 @@ public class AgentBootstrap implements ApplicationRunner {
         } catch (Exception e) {
             log.error("启动注册智能体失败（数据库不可用？）：{}", e.getMessage());
         }
+    }
+
+    /** 按 agent.mcpServers（JSON ID 数组）从全量 Map 中解析 MCP 服务列表 */
+    private List<McpServer> mcpServersOf(AgentInfo agent, Map<Long, McpServer> all) {
+        if (StrUtil.isBlank(agent.getMcpServers())) {
+            return List.of();
+        }
+        return JSONUtil.toList(agent.getMcpServers(), Long.class).stream()
+                .map(all::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

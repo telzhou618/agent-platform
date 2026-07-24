@@ -47,6 +47,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
+        nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
         // 流式对话：点击弹起对话窗口。SideNavItem 没有服务端点击 API，
         // 用 DOM 事件监听实现，样式与其他菜单项完全一致
         SideNavItem chat = new SideNavItem("流式对话");

@@ -3,26 +3,29 @@ package com.example.agent.system.agent;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.Model;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.Toolkit;
+import io.agentscope.core.tool.mcp.McpClientWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 智能体实例注册中心：按 agent_info 配置把 ReActAgent 动态注册为 Spring 单例 Bean，
- * 创建时即固化它的系统提示词、模型和专属工具箱（不再依赖运行时中间件）。
+ * 创建时即固化它的系统提示词、模型、系统工具和 MCP 服务工具。
  * 管理端新增/编辑 -> register 重建；删除 -> unregister；启动 -> 全量 register；
- * 模型配置变更/删除 -> onModelChanged / onModelDeleted 级联重建引用它的实例。
+ * 模型或 MCP 服务变更/删除 -> onXxxChanged / onXxxDeleted 级联重建引用它的实例。
  */
 @Slf4j
 @Component
@@ -35,32 +38,40 @@ public class AgentRegistry {
 
     private final ConfigurableApplicationContext applicationContext;
     private final ModelFactory modelFactory;
-    /** 全局工具箱：仅用于取 AgentTool 实例，组装各智能体的专属工具箱 */
+    private final McpClientFactory mcpClientFactory;
+    /** 全局工具箱：仅用于取系统 AgentTool 实例，组装各智能体的专属工具箱 */
     private final Toolkit toolkit;
 
-    /** agentId -> 注册时的配置快照，模型变更级联重建时使用 */
-    private final Map<Long, AgentInfo> agents = new ConcurrentHashMap<>();
+    /** agentId -> 构建快照（智能体配置 + 模型 + MCP 服务），级联重建时使用 */
+    private final Map<Long, BuildSnapshot> snapshots = new ConcurrentHashMap<>();
+    /** agentId -> 该实例占用的 MCP 客户端，销毁实例时一并释放 */
+    private final Map<Long, List<McpClientWrapper>> mcpClients = new ConcurrentHashMap<>();
 
     /** 注册智能体实例；已注册则先销毁重建（编辑场景） */
-    public synchronized void register(AgentInfo agent, ModelConfig modelConfig) {
+    public synchronized void register(AgentInfo agent, ModelConfig modelConfig, List<McpServer> mcpServers) {
         if (agent == null || agent.getId() == null) {
             return;
         }
         unregister(agent.getId());
+        List<McpClientWrapper> clients = new ArrayList<>();
         beanFactory().registerSingleton(beanName(agent.getId()),
-                build(agent, modelFactory.fromConfig(modelConfig)));
-        agents.put(agent.getId(), agent);
+                build(agent, modelFactory.fromConfig(modelConfig),
+                        mcpServers == null ? List.of() : mcpServers, clients));
+        snapshots.put(agent.getId(),
+                new BuildSnapshot(agent, modelConfig, List.copyOf(mcpServers == null ? List.of() : mcpServers)));
+        mcpClients.put(agent.getId(), clients);
         log.info("注册智能体实例：{}（id={}）", agent.getName(), agent.getId());
     }
 
-    /** 销毁智能体实例（管理端删除时调用） */
+    /** 销毁智能体实例（管理端删除时调用），并释放其 MCP 客户端 */
     public synchronized void unregister(Long agentId) {
         String name = beanName(agentId);
         if (beanFactory().containsSingleton(name)) {
             beanFactory().destroySingleton(name);
-            agents.remove(agentId);
             log.info("销毁智能体实例：id={}", agentId);
         }
+        snapshots.remove(agentId);
+        closeQuietly(mcpClients.remove(agentId));
     }
 
     /** 按 ID 查找智能体实例，未注册返回 null（调用方回退默认智能体） */
@@ -72,22 +83,43 @@ public class AgentRegistry {
 
     /** 模型配置变更：重建引用它的全部智能体实例 */
     public synchronized void onModelChanged(ModelConfig fresh) {
-        rebuild(fresh.getId(), fresh);
+        snapshots.values().stream()
+                .filter(s -> fresh.getId().equals(s.agent().getModelId()))
+                .forEach(s -> register(s.agent(), fresh, s.mcpServers()));
     }
 
     /** 模型删除：引用它的智能体回退默认模型并重建 */
     public synchronized void onModelDeleted(Long modelId) {
-        rebuild(modelId, null);
+        snapshots.values().stream()
+                .filter(s -> modelId.equals(s.agent().getModelId()))
+                .forEach(s -> register(s.agent(), null, s.mcpServers()));
     }
 
-    private void rebuild(Long modelId, ModelConfig fresh) {
-        agents.values().stream()
-                .filter(a -> modelId.equals(a.getModelId()))
-                .forEach(a -> register(a, fresh));
+    /** MCP 服务变更：重建引用它的全部智能体实例 */
+    public synchronized void onMcpChanged(McpServer fresh) {
+        snapshots.values().stream()
+                .filter(s -> references(s, fresh.getId()))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
+                        .map(m -> fresh.getId().equals(m.getId()) ? fresh : m)
+                        .toList()));
     }
 
-    /** 组装实例：系统提示词 + 模型 + 专属工具箱（只含配置的工具） */
-    private ReActAgent build(AgentInfo agent, Model model) {
+    /** MCP 服务删除：重建引用它的全部智能体实例（移除该服务的工具） */
+    public synchronized void onMcpDeleted(Long mcpServerId) {
+        snapshots.values().stream()
+                .filter(s -> references(s, mcpServerId))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
+                        .filter(m -> !mcpServerId.equals(m.getId()))
+                        .toList()));
+    }
+
+    private boolean references(BuildSnapshot snapshot, Long mcpServerId) {
+        return snapshot.mcpServers().stream().anyMatch(m -> mcpServerId.equals(m.getId()));
+    }
+
+    /** 组装实例：系统提示词 + 模型 + 专属工具箱（配置的系统工具 + 各 MCP 服务的工具） */
+    private ReActAgent build(AgentInfo agent, Model model, List<McpServer> mcpServers,
+                             List<McpClientWrapper> clientsOut) {
         Toolkit agentToolkit = new Toolkit();
         for (String toolName : parseToolNames(agent.getTools())) {
             AgentTool tool = toolkit.getTool(toolName);
@@ -97,6 +129,17 @@ public class AgentRegistry {
                 log.warn("智能体「{}」配置的工具 {} 不存在，已跳过", agent.getName(), toolName);
             }
         }
+        for (McpServer server : mcpServers) {
+            try {
+                McpClientWrapper client = mcpClientFactory.create(server);
+                agentToolkit.registerMcpClient(client).block();
+                clientsOut.add(client);
+                log.info("智能体「{}」挂载 MCP 服务「{}」", agent.getName(), server.getName());
+            } catch (Exception e) {
+                log.warn("智能体「{}」挂载 MCP 服务「{}」失败，已跳过：{}",
+                        agent.getName(), server.getName(), e.getMessage());
+            }
+        }
         return ReActAgent.builder()
                 .name(agent.getName())
                 .description(StrUtil.nullToEmpty(agent.getDescription()))
@@ -104,6 +147,19 @@ public class AgentRegistry {
                 .model(model)
                 .toolkit(agentToolkit)
                 .build();
+    }
+
+    private void closeQuietly(List<McpClientWrapper> clients) {
+        if (clients == null) {
+            return;
+        }
+        for (McpClientWrapper client : clients) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.warn("关闭 MCP 客户端失败：{}", e.getMessage());
+            }
+        }
     }
 
     /** JSON 数组字符串 -> 工具名列表 */
@@ -117,5 +173,9 @@ public class AgentRegistry {
 
     private DefaultListableBeanFactory beanFactory() {
         return (DefaultListableBeanFactory) applicationContext.getBeanFactory();
+    }
+
+    /** 一次构建的全部输入，级联重建时回放 */
+    private record BuildSnapshot(AgentInfo agent, ModelConfig model, List<McpServer> mcpServers) {
     }
 }

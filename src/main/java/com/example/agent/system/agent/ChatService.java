@@ -11,10 +11,13 @@ import io.agentscope.core.event.ToolCallStartEvent;
 import io.agentscope.core.event.ToolResultEndEvent;
 import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import io.agentscope.core.message.UserMessage;
+import io.agentscope.core.tool.mcp.McpMeta;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 /**
  * 对话服务：按 agentId 从 Spring 容器取对应的 ReActAgent 实例进行对话，
@@ -43,9 +46,18 @@ public class ChatService {
         if (agent == null) {
             agent = defaultAgent;
         }
+
+        // mcp 元数据, 会自动传递给下游的 MCP 服务
+        McpMeta meta = new McpMeta(Map.of(
+                "userId", 1,
+                "sessionId", sessionId,
+                "traceId", IdUtil.fastSimpleUUID()
+        ));
+
         RuntimeContext ctx = RuntimeContext.builder()
                 .sessionId(sessionId)
                 .userId(DEFAULT_USER_ID)
+                .put(McpMeta.class, meta)
                 .build();
         return agent.streamEvents(new UserMessage(text), ctx)
                 .flatMap(e -> Mono.justOrEmpty(toChunk(e)));

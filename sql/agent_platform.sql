@@ -33,12 +33,30 @@ create table agent_info (
     model_id    bigint        null comment '关联模型 ID（model_config.id）',
     sys_prompt  text          null comment '系统提示词',
     tools       varchar(1024) null comment '工具名称列表，JSON 数组',
+    mcp_servers varchar(1024) null comment 'MCP 服务 ID 列表，JSON 数组',
     description varchar(256)  null comment '描述',
     create_time datetime      null comment '创建时间',
     update_time datetime      null comment '更新时间',
     deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除',
     key idx_model_id (model_id)
 ) engine = innodb comment '智能体表';
+
+-- ----------------------------
+-- MCP 服务表
+-- ----------------------------
+drop table if exists mcp_server;
+create table mcp_server (
+    id          bigint auto_increment primary key,
+    name        varchar(64)   not null comment 'MCP 服务名称',
+    description varchar(256)  null comment '描述',
+    type        varchar(32)   not null default 'streamableHttp' comment '传输类型：streamableHttp/sse',
+    url         varchar(512)  not null comment '服务地址',
+    headers     varchar(2048) null comment '请求头，JSON 对象 {key:value}',
+    timeout     int           not null default 30000 comment '超时时间（毫秒）',
+    create_time datetime      null comment '创建时间',
+    update_time datetime      null comment '更新时间',
+    deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除'
+) engine = innodb comment 'MCP 服务表';
 
 -- ----------------------------
 -- 种子数据

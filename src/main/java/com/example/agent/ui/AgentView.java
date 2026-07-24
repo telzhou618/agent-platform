@@ -7,8 +7,10 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.ToolService;
 import com.vaadin.flow.component.Component;
@@ -41,6 +43,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,6 +55,7 @@ public class AgentView extends VerticalLayout {
     private final AgentInfoService agentService;
     private final ModelConfigService modelService;
     private final ToolService toolService;
+    private final McpServerService mcpServerService;
     private final ChatService chatService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
@@ -61,10 +65,11 @@ public class AgentView extends VerticalLayout {
     private Map<Long, ModelConfig> modelMap = Map.of();
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
-                     ToolService toolService, ChatService chatService) {
+                     ToolService toolService, McpServerService mcpServerService, ChatService chatService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
+        this.mcpServerService = mcpServerService;
         this.chatService = chatService;
         setSizeFull();
 
@@ -152,7 +157,7 @@ public class AgentView extends VerticalLayout {
         boolean isNew = agent.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增智能体" : "编辑智能体");
-        dialog.setWidth("640px");
+        dialog.setWidth("840px");
 
         TextField name = new TextField("名称");
 
@@ -168,6 +173,12 @@ public class AgentView extends VerticalLayout {
         MultiSelectComboBox<String> tools = new MultiSelectComboBox<>("工具");
         tools.setItems(toolService.listToolNames());
         tools.setHelperText("可选工具来自「工具管理」中解析出的系统工具");
+
+        MultiSelectComboBox<McpServer> mcpServers = new MultiSelectComboBox<>("MCP服务");
+        List<McpServer> mcpList = mcpServerService.list();
+        mcpServers.setItems(mcpList);
+        mcpServers.setItemLabelGenerator(McpServer::getName);
+        mcpServers.setHelperText("可选服务来自「MCP服务管理」，保存后自动挂载其全部工具");
 
         TextField description = new TextField("描述");
 
@@ -196,6 +207,20 @@ public class AgentView extends VerticalLayout {
                         },
                         json -> StrUtil.isBlank(json) ? Set.of() : new LinkedHashSet<>(parseTools(json)))
                 .bind(AgentInfo::getTools, AgentInfo::setTools);
+        // MCP 服务多选 <-> JSON ID 数组字符串
+        Map<Long, McpServer> mcpById = mcpList.stream()
+                .collect(Collectors.toMap(McpServer::getId, Function.identity()));
+        binder.forField(mcpServers)
+                .withConverter(
+                        selected -> CollUtil.isEmpty(selected) ? null
+                                : JSONUtil.toJsonStr(selected.stream()
+                                        .map(McpServer::getId).sorted().toList()),
+                        json -> StrUtil.isBlank(json) ? Set.of()
+                                : JSONUtil.toList(json, Long.class).stream()
+                                        .map(mcpById::get)
+                                        .filter(Objects::nonNull)
+                                        .collect(Collectors.toCollection(LinkedHashSet::new)))
+                .bind(AgentInfo::getMcpServers, AgentInfo::setMcpServers);
         binder.bind(description, AgentInfo::getDescription, AgentInfo::setDescription);
 
         name.setRequiredIndicatorVisible(true);
@@ -203,10 +228,11 @@ public class AgentView extends VerticalLayout {
 
         binder.readBean(agent);
 
-        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools);
+        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(sysPrompt, 2);
         form.setColspan(tools, 2);
+        form.setColspan(mcpServers, 2);
         dialog.add(form);
 
         Button cancel = new Button("取消", e -> dialog.close());
