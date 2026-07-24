@@ -59,6 +59,24 @@ create table mcp_server (
 ) engine = innodb comment 'MCP 服务表';
 
 -- ----------------------------
+-- 对话记录表（dashboard 统计数据来源）
+-- ----------------------------
+drop table if exists chat_record;
+create table chat_record (
+    id          bigint auto_increment primary key,
+    agent_id    bigint      not null comment '智能体 ID（agent_info.id）',
+    session_id  varchar(64) not null comment '会话 ID',
+    tool_calls  int         not null default 0 comment '本轮工具调用次数',
+    duration_ms bigint      not null default 0 comment '本轮耗时（毫秒）',
+    success     tinyint     not null default 1 comment '是否成功：1 成功 0 失败',
+    create_time datetime    null comment '创建时间',
+    update_time datetime    null comment '更新时间',
+    deleted     tinyint     not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_agent_id (agent_id),
+    key idx_create_time (create_time)
+) engine = innodb comment '对话记录表';
+
+-- ----------------------------
 -- 种子数据
 -- ----------------------------
 insert into model_config (name, provider, model, base_url, api_key, remark, create_time, update_time) values

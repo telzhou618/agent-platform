@@ -1,6 +1,7 @@
 package com.example.agent.system.agent;
 
 import cn.hutool.core.util.IdUtil;
+import com.example.agent.system.service.ChatRecordService;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
@@ -19,6 +20,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 对话服务：按 agentId 从 Spring 容器取对应的 ReActAgent 实例进行对话，
@@ -35,6 +38,7 @@ public class ChatService {
 
     private final ReActAgent defaultAgent;
     private final AgentRegistry agentRegistry;
+    private final ChatRecordService chatRecordService;
 
     /** 生成新会话 ID */
     public String newSessionId() {
@@ -64,8 +68,29 @@ public class ChatService {
         // AgentScope 默认对非只读 MCP 工具逐次要求用户授权（HITL），
         // 不设置会导致工具调用挂起、后续对话报 "Agent is paused" 错误。
         agent.setPermissionMode(ctx, PermissionMode.BYPASS);
-        return agent.streamEvents(new UserMessage(text), ctx)
+        Flux<ChatChunk> chunks = agent.streamEvents(new UserMessage(text), ctx)
                 .flatMap(e -> Mono.justOrEmpty(toChunk(e)));
+        // 默认智能体（agentId 为空）不属于任何配置，不做统计
+        if (agentId == null) {
+            return chunks;
+        }
+        return record(sessionId, agentId, chunks);
+    }
+
+    /** 埋点：统计工具调用次数和耗时，流结束时异步落一条对话记录 */
+    private Flux<ChatChunk> record(String sessionId, Long agentId, Flux<ChatChunk> chunks) {
+        long startMillis = System.currentTimeMillis();
+        AtomicInteger toolCalls = new AtomicInteger();
+        AtomicBoolean failed = new AtomicBoolean();
+        return chunks
+                .doOnNext(c -> {
+                    if (c.kind() == ChatChunk.Kind.TOOL_CALL_START) {
+                        toolCalls.incrementAndGet();
+                    }
+                })
+                .doOnError(e -> failed.set(true))
+                .doFinally(signal -> chatRecordService.record(agentId, sessionId, toolCalls.get(),
+                        System.currentTimeMillis() - startMillis, !failed.get()));
     }
 
     /** AgentScope 事件 -> 对话输出单元；不关心的事件返回 null（被过滤掉） */
