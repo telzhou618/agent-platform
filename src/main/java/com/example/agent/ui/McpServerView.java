@@ -43,7 +43,9 @@ import java.util.concurrent.CompletableFuture;
 @PageTitle("MCP服务管理 - agent-platform")
 public class McpServerView extends VerticalLayout {
 
-    /** 传输类型 -> 展示名 */
+    /**
+     * 传输类型 -> 展示名
+     */
     private static final Map<String, String> TYPES = Map.of(
             McpServer.TYPE_STREAMABLE_HTTP, "可流式传输的 HTTP（streamableHttp）",
             McpServer.TYPE_SSE, "SSE（sse）");
@@ -101,7 +103,9 @@ public class McpServerView extends VerticalLayout {
         return new HorizontalLayout(tools, edit, delete);
     }
 
-    /** 状态徽标：渲染后异步检测，可用绿色、不可用红色 */
+    /**
+     * 状态徽标：渲染后异步检测，可用绿色、不可用红色
+     */
     private Component statusBadge(McpServer server) {
         Span badge = new Span("检测中…");
         badge.getElement().setAttribute("theme", "badge contrast");
@@ -129,12 +133,13 @@ public class McpServerView extends VerticalLayout {
         paginationBar.setTotal(result.getTotal());
     }
 
-    /** 新增 / 编辑对话框：保存前服务端会验证可连接，连不上则报错放弃 */
+    /**
+     * 新增 / 编辑对话框：保存前服务端会验证可连接，连不上则报错放弃
+     */
     private void openDialog(McpServer server) {
         boolean isNew = server.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增MCP服务" : "编辑MCP服务");
-        dialog.setWidth("640px");
 
         TextField name = new TextField("名称");
         TextField description = new TextField("描述");
@@ -193,7 +198,9 @@ public class McpServerView extends VerticalLayout {
         dialog.open();
     }
 
-    /** 工具详情：实时从 MCP 服务拉取工具列表 */
+    /**
+     * 工具详情：实时从 MCP 服务拉取工具列表
+     */
     private void openToolsDialog(McpServer server) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("可用工具 - " + server.getName());
@@ -233,7 +240,9 @@ public class McpServerView extends VerticalLayout {
                 }));
     }
 
-    /** 单个工具：标题为工具名，展开查看描述和参数 JSON Schema */
+    /**
+     * 单个工具：标题为工具名，展开查看描述和参数 JSON Schema
+     */
     private Component toolDetail(McpSchema.Tool tool) {
         VerticalLayout body = new VerticalLayout();
         body.setPadding(false);
@@ -314,7 +323,9 @@ public class McpServerView extends VerticalLayout {
             }
         }
 
-        /** 汇总为 JSON 对象字符串；无有效行时返回 null */
+        /**
+         * 汇总为 JSON 对象字符串；无有效行时返回 null
+         */
         String toJson() {
             Map<String, String> map = new LinkedHashMap<>();
             for (Component row : rows.getChildren().toList()) {

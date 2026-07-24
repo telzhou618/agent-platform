@@ -61,7 +61,9 @@ public class AgentView extends VerticalLayout {
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
 
-    /** 模型 ID -> 模型，供 Grid 展示名称 */
+    /**
+     * 模型 ID -> 模型，供 Grid 展示名称
+     */
     private Map<Long, ModelConfig> modelMap = Map.of();
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
@@ -115,7 +117,9 @@ public class AgentView extends VerticalLayout {
         return new HorizontalLayout(chat, edit, delete);
     }
 
-    /** 工具名列表渲染为徽标组 */
+    /**
+     * 工具名列表渲染为徽标组
+     */
     private Component toolBadges(String toolsJson) {
         HorizontalLayout badges = new HorizontalLayout();
         badges.setSpacing(false);
@@ -130,10 +134,12 @@ public class AgentView extends VerticalLayout {
 
     private String modelName(Long modelId) {
         ModelConfig model = modelMap.get(modelId);
-        return model == null ? "" : model.getName();
+        return model == null ? "" : model.getName() + "(" + model.getModel() + ")";
     }
 
-    /** JSON 数组字符串 -> 工具名列表 */
+    /**
+     * JSON 数组字符串 -> 工具名列表
+     */
     private List<String> parseTools(String toolsJson) {
         if (StrUtil.isBlank(toolsJson)) {
             return List.of();
@@ -157,7 +163,6 @@ public class AgentView extends VerticalLayout {
         boolean isNew = agent.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增智能体" : "编辑智能体");
-        dialog.setWidth("840px");
 
         TextField name = new TextField("名称");
 
@@ -215,12 +220,12 @@ public class AgentView extends VerticalLayout {
                 .withConverter(
                         selected -> CollUtil.isEmpty(selected) ? null
                                 : JSONUtil.toJsonStr(selected.stream()
-                                        .map(McpServer::getId).sorted().toList()),
+                                .map(McpServer::getId).sorted().toList()),
                         json -> StrUtil.isBlank(json) ? Set.of()
                                 : JSONUtil.toList(json, Long.class).stream()
-                                        .map(mcpById::get)
-                                        .filter(Objects::nonNull)
-                                        .collect(Collectors.toCollection(LinkedHashSet::new)))
+                                .map(mcpById::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .bind(AgentInfo::getMcpServers, AgentInfo::setMcpServers);
         binder.bind(description, AgentInfo::getDescription, AgentInfo::setDescription);
 
