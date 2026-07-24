@@ -25,7 +25,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/** 首页 dashboard：平台资源概览 + 对话活跃统计（数据来自 chat_record 埋点）。样式全部内联，不依赖 app.css。 */
+/**
+ * 首页 dashboard：平台资源概览 + 对话活跃统计（数据来自 chat_record 埋点）。样式全部内联，不依赖 app.css。
+ */
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("首页 - agent-platform")
 public class HomeView extends VerticalLayout {
@@ -33,7 +35,9 @@ public class HomeView extends VerticalLayout {
     private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("MM-dd");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    /** 卡片主题色：[主色, 图标底色] */
+    /**
+     * 卡片主题色：[主色, 图标底色]
+     */
     private static final String[] BLUE = {"var(--lumo-primary-color)", "var(--lumo-primary-color-10pct)"};
     private static final String[] GREEN = {"var(--lumo-success-color)", "var(--lumo-success-color-10pct)"};
     private static final String[] ORANGE = {"#ed7c31", "rgba(237, 124, 49, 0.12)"};
@@ -42,7 +46,6 @@ public class HomeView extends VerticalLayout {
     public HomeView(ModelConfigService modelConfigService, AgentInfoService agentInfoService,
                     ToolService toolService, McpServerService mcpServerService,
                     ChatRecordService chatRecordService) {
-        setMaxWidth("1200px");
 
         H2 title = new H2("Agent 管理平台");
         title.getStyle().set("margin", "0");
@@ -71,7 +74,9 @@ public class HomeView extends VerticalLayout {
         return cards;
     }
 
-    /** 单个统计卡片：图标 + 数值 + 名称，点击跳转对应管理页 */
+    /**
+     * 单个统计卡片：图标 + 数值 + 名称，点击跳转对应管理页
+     */
     private Div statCard(String label, long value, VaadinIcon vaadinIcon, String[] colors, String route) {
         Icon icon = vaadinIcon.create();
         icon.getStyle()
@@ -163,7 +168,9 @@ public class HomeView extends VerticalLayout {
         return panel;
     }
 
-    /** 活跃智能体行：头像 + 名称与指标 + 成功率与最近活跃时间 */
+    /**
+     * 活跃智能体行：头像 + 名称与指标 + 成功率与最近活跃时间
+     */
     private Div activeRow(AgentActivityStat stat, boolean last) {
         Avatar avatar = new Avatar(stat.getAgentName());
         avatar.setColorIndex((int) (stat.getAgentId() % 7));
@@ -216,7 +223,9 @@ public class HomeView extends VerticalLayout {
 
     // ---------- 样式小工具 ----------
 
-    /** 面板容器：白底圆角边框 */
+    /**
+     * 面板容器：白底圆角边框
+     */
     private Div panel(String title) {
         H3 heading = new H3(title);
         heading.getStyle().set("margin-top", "0").set("font-size", "var(--lumo-font-size-l)");
@@ -231,7 +240,9 @@ public class HomeView extends VerticalLayout {
         return panel;
     }
 
-    /** 横向 flex 布局：自动换行、标准间距 */
+    /**
+     * 横向 flex 布局：自动换行、标准间距
+     */
     private static void styleFlexRow(Div div) {
         div.getStyle()
                 .set("display", "flex").set("flex-wrap", "wrap")
