@@ -1,7 +1,5 @@
 package com.example.agent.ui;
 
-import com.example.agent.system.agent.ChatService;
-import com.example.agent.system.service.AgentInfoService;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
@@ -23,7 +21,7 @@ public class MainLayout extends AppLayout {
 
     private final Div footer = new Div();
 
-    public MainLayout(AgentInfoService agentInfoService, ChatService chatService) {
+    public MainLayout() {
         Icon logoIcon = new Icon(VaadinIcon.MAGIC);
         logoIcon.getStyle().set("color", "var(--lumo-primary-color)");
         H1 title = new H1("agent-platform");
@@ -48,13 +46,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
-        // 流式对话：点击弹起对话窗口。SideNavItem 没有服务端点击 API，
-        // 用 DOM 事件监听实现，样式与其他菜单项完全一致
-        SideNavItem chat = new SideNavItem("流式对话");
-        chat.setPrefixComponent(new Icon(VaadinIcon.CHAT));
-        chat.getElement().addEventListener("click",
-                e -> new ChatDialog(agentInfoService, chatService).open());
-        nav.addItem(chat);
+        nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
         addToDrawer(nav);
 
         // 主内容区底部居中的版权信息

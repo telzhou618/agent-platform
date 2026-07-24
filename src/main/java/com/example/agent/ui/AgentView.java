@@ -5,7 +5,6 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
@@ -55,7 +54,6 @@ public class AgentView extends VerticalLayout {
     private final ModelConfigService modelService;
     private final ToolService toolService;
     private final McpServerService mcpServerService;
-    private final ChatService chatService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
@@ -66,12 +64,11 @@ public class AgentView extends VerticalLayout {
     private Map<Long, ModelConfig> modelMap = Map.of();
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
-                     ToolService toolService, McpServerService mcpServerService, ChatService chatService) {
+                     ToolService toolService, McpServerService mcpServerService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
         this.mcpServerService = mcpServerService;
-        this.chatService = chatService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -107,7 +104,7 @@ public class AgentView extends VerticalLayout {
     }
 
     private Component actionButtons(AgentInfo agent) {
-        Button chat = new Button("对话", e -> new ChatDialog(agentService, chatService, agent).open());
+        Button chat = new Button("对话", e -> getUI().ifPresent(ui -> ui.navigate(ChatView.class, agent.getId())));
         chat.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button edit = new Button("编辑", e -> openDialog(agent));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);

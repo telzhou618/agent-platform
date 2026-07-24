@@ -8,8 +8,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -17,19 +17,26 @@ import com.vaadin.flow.component.messages.MessageInput;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
 /**
- * 流式对话窗口：选择智能体进行对话，对话内容流式输出。
+ * 流式对话视图：选择智能体进行对话，对话内容流式输出。
  * 切换智能体或点击「新会话」都会清空消息并生成新的 sessionId（服务端会话历史随之隔离）。
+ * 支持 URL 参数预选智能体：chat/{agentId}（智能体管理页「对话」按钮进入时带上）。
  */
-public class ChatDialog extends Dialog {
+@Route(value = "chat", layout = MainLayout.class)
+@PageTitle("流式对话 - agent-platform")
+public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
 
-    private final transient AgentInfoService agentInfoService;
     private final transient ChatService chatService;
 
     private final Select<AgentInfo> agentSelect = new Select<>();
@@ -38,27 +45,23 @@ public class ChatDialog extends Dialog {
     private final Scroller scroller;
     private final MessageInput input = new MessageInput();
 
+    /** 可选智能体列表（进入视图时查一次，预选按 ID 匹配） */
+    private final List<AgentInfo> agents;
+
     /** 当前会话 */
     private String sessionId;
     private AgentInfo currentAgent;
 
-    public ChatDialog(AgentInfoService agentInfoService, ChatService chatService) {
-        this(agentInfoService, chatService, null);
-    }
-
-    /** @param preselected 预选智能体（智能体管理页「对话」按钮进入时传入），null 则默认选第一个 */
-    public ChatDialog(AgentInfoService agentInfoService, ChatService chatService, AgentInfo preselected) {
-        this.agentInfoService = agentInfoService;
+    public ChatView(AgentInfoService agentInfoService, ChatService chatService) {
         this.chatService = chatService;
-        setHeaderTitle("流式对话");
-        setWidth("min(1100px, 92vw)");
-        setHeight("82vh");
-        setResizable(true);
-        setDraggable(true);
+        this.agents = agentInfoService.list();
+        setSizeFull();
+
+        H2 title = new H2("流式对话");
+        title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
 
         agentSelect.setLabel("选择智能体");
         agentSelect.setWidth("240px");
-        List<AgentInfo> agents = agentInfoService.list();
         agentSelect.setItems(agents);
         agentSelect.setItemLabelGenerator(AgentInfo::getName);
 
@@ -69,7 +72,7 @@ public class ChatDialog extends Dialog {
         sessionHint.getStyle()
                 .set("color", "var(--lumo-secondary-text-color)")
                 .set("font-size", "var(--lumo-font-size-xs)");
-        HorizontalLayout toolbar = new HorizontalLayout(agentSelect, newSession, sessionHint);
+        HorizontalLayout toolbar = new HorizontalLayout(title, agentSelect, newSession, sessionHint);
         toolbar.setWidthFull();
         toolbar.expand(sessionHint);
         toolbar.setDefaultVerticalComponentAlignment(Alignment.END);
@@ -83,17 +86,18 @@ public class ChatDialog extends Dialog {
         input.setWidthFull();
         input.addSubmitListener(e -> send(e.getValue()));
 
-        VerticalLayout layout = new VerticalLayout(toolbar, scroller, input);
-        layout.setSizeFull();
-        layout.setPadding(false);
-        layout.expand(scroller);
-        add(layout);
+        add(toolbar, scroller, input);
+        expand(scroller);
 
         // 切换智能体即新开会话：清空消息 + 新 sessionId
         agentSelect.addValueChangeListener(e -> startSession(e.getValue()));
-        // 按 ID 匹配预选智能体（列表是重新查的，直接比对象可能因字段变化匹配不上）
-        AgentInfo target = preselected == null ? null : agents.stream()
-                .filter(a -> a.getId().equals(preselected.getId()))
+    }
+
+    /** 按 URL 参数预选智能体（列表是构造时查的，直接比对象可能因字段变化匹配不上）；无参数默认选第一个 */
+    @Override
+    public void setParameter(BeforeEvent event, @OptionalParameter Long agentId) {
+        AgentInfo target = agentId == null ? null : agents.stream()
+                .filter(a -> a.getId().equals(agentId))
                 .findFirst().orElse(null);
         if (target != null) {
             agentSelect.setValue(target);
