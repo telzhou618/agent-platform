@@ -42,6 +42,7 @@ public class HomeView extends VerticalLayout {
                     ChatRecordService chatRecordService) {
 
         H2 title = new H2("Agent 管理平台");
+        title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
         title.addClassName("home-title");
         Paragraph intro = new Paragraph("基于 AgentScope + Spring Boot + Vaadin 的综合性 Agent 管理平台。");
         intro.addClassName("home-intro");

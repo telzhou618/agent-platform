@@ -45,10 +45,14 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
     private final Scroller scroller;
     private final MessageInput input = new MessageInput();
 
-    /** 可选智能体列表（进入视图时查一次，预选按 ID 匹配） */
+    /**
+     * 可选智能体列表（进入视图时查一次，预选按 ID 匹配）
+     */
     private final List<AgentInfo> agents;
 
-    /** 当前会话 */
+    /**
+     * 当前会话
+     */
     private String sessionId;
     private AgentInfo currentAgent;
 
@@ -72,7 +76,7 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
         sessionHint.getStyle()
                 .set("color", "var(--lumo-secondary-text-color)")
                 .set("font-size", "var(--lumo-font-size-xs)");
-        HorizontalLayout toolbar = new HorizontalLayout(title, agentSelect, newSession, sessionHint);
+        HorizontalLayout toolbar = new HorizontalLayout(agentSelect, newSession, sessionHint);
         toolbar.setWidthFull();
         toolbar.expand(sessionHint);
         toolbar.setDefaultVerticalComponentAlignment(Alignment.END);
@@ -86,14 +90,16 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
         input.setWidthFull();
         input.addSubmitListener(e -> send(e.getValue()));
 
-        add(toolbar, scroller, input);
+        add(title, toolbar, scroller, input);
         expand(scroller);
 
         // 切换智能体即新开会话：清空消息 + 新 sessionId
         agentSelect.addValueChangeListener(e -> startSession(e.getValue()));
     }
 
-    /** 按 URL 参数预选智能体（列表是构造时查的，直接比对象可能因字段变化匹配不上）；无参数默认选第一个 */
+    /**
+     * 按 URL 参数预选智能体（列表是构造时查的，直接比对象可能因字段变化匹配不上）；无参数默认选第一个
+     */
     @Override
     public void setParameter(BeforeEvent event, @OptionalParameter Long agentId) {
         AgentInfo target = agentId == null ? null : agents.stream()
@@ -108,7 +114,9 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
         }
     }
 
-    /** 新开会话：清空消息，生成新的 sessionId */
+    /**
+     * 新开会话：清空消息，生成新的 sessionId
+     */
     private void startSession(AgentInfo agent) {
         this.currentAgent = agent;
         this.sessionId = chatService.newSessionId();
@@ -143,7 +151,9 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
                         () -> ui.access(() -> input.setEnabled(true)));
     }
 
-    /** 用户消息气泡：靠右主色，带用户头像 */
+    /**
+     * 用户消息气泡：靠右主色，带用户头像
+     */
     private void addUserBubble(String text) {
         Div bubble = new Div();
         bubble.setText(text);
@@ -159,7 +169,9 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
         scrollToBottom();
     }
 
-    /** 系统提示行：居中灰色小字 */
+    /**
+     * 系统提示行：居中灰色小字
+     */
     private void addSystemLine(String text) {
         Span line = new Span(text);
         line.getStyle()
