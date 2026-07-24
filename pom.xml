@@ -79,6 +79,12 @@
             <artifactId>commonmark</artifactId>
             <version>0.25.0</version>
         </dependency>
+        <!-- GFM 表格扩展 -->
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+            <version>0.25.0</version>
+        </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
