@@ -11,6 +11,7 @@ import io.agentscope.core.event.ToolCallStartEvent;
 import io.agentscope.core.event.ToolResultEndEvent;
 import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import io.agentscope.core.message.UserMessage;
+import io.agentscope.core.permission.PermissionMode;
 import io.agentscope.core.tool.mcp.McpMeta;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,10 @@ public class ChatService {
                 .userId(DEFAULT_USER_ID)
                 .put(McpMeta.class, meta)
                 .build();
+        // 平台工具均由管理员显式配置，不做人工确认：BYPASS 跳过权限评估。
+        // AgentScope 默认对非只读 MCP 工具逐次要求用户授权（HITL），
+        // 不设置会导致工具调用挂起、后续对话报 "Agent is paused" 错误。
+        agent.setPermissionMode(ctx, PermissionMode.BYPASS);
         return agent.streamEvents(new UserMessage(text), ctx)
                 .flatMap(e -> Mono.justOrEmpty(toChunk(e)));
     }
