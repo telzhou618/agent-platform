@@ -1,11 +1,6 @@
 package com.example.agent.system.agent;
 
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
-import com.example.agent.system.entity.AgentInfo;
-import com.example.agent.system.service.AgentInfoService;
-import com.example.agent.system.service.ModelConfigService;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
@@ -21,12 +16,10 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 /**
- * 对话服务：所有会话共用全局唯一的 ReActAgent，
- * 每次对话按智能体配置组装 {@link AgentRuntimeConfig} 放入 RuntimeContext，
- * 由 DynamicAgentMiddleware 动态加载系统提示词、模型和工具。
+ * 对话服务：按 agentId 从 Spring 容器取对应的 ReActAgent 实例进行对话，
+ * 实例的系统提示词、模型、工具在注册时已固化（见 AgentRegistry）；
+ * 取不到实例时回退全局默认智能体。
  * 会话历史由 AgentScope 按 (userId, sessionId) 自动维护，换新 sessionId 即新开会话。
  */
 @Service
@@ -36,33 +29,25 @@ public class ChatService {
     /** 用户 ID 暂时固定，将来接入登录后再替换 */
     public static final String DEFAULT_USER_ID = "default";
 
-    private final ReActAgent reactAgent;
-    private final AgentInfoService agentInfoService;
-    private final ModelConfigService modelConfigService;
-    private final ModelFactory modelFactory;
+    private final ReActAgent defaultAgent;
+    private final AgentRegistry agentRegistry;
 
     /** 生成新会话 ID */
     public String newSessionId() {
         return IdUtil.simpleUUID();
     }
 
-    /**
-     * 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息。
-     * agentId 为空或智能体不存在时使用全局默认提示词 + 默认模型 + 无工具。
-     */
+    /** 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息 */
     public Flux<ChatChunk> streamChat(String sessionId, Long agentId, String text) {
-        AgentInfo agent = agentId == null ? null : agentInfoService.getById(agentId);
-        AgentRuntimeConfig config = new AgentRuntimeConfig(
-                agent == null ? null : agent.getSysPrompt(),
-                modelFactory.fromConfig(agent == null || agent.getModelId() == null
-                        ? null : modelConfigService.getById(agent.getModelId())),
-                agent == null ? List.of() : parseToolNames(agent.getTools()));
+        ReActAgent agent = agentId == null ? null : agentRegistry.find(agentId);
+        if (agent == null) {
+            agent = defaultAgent;
+        }
         RuntimeContext ctx = RuntimeContext.builder()
                 .sessionId(sessionId)
                 .userId(DEFAULT_USER_ID)
-                .put(AgentRuntimeConfig.class, config)
                 .build();
-        return reactAgent.streamEvents(new UserMessage(text), ctx)
+        return agent.streamEvents(new UserMessage(text), ctx)
                 .flatMap(e -> Mono.justOrEmpty(toChunk(e)));
     }
 
@@ -88,13 +73,5 @@ public class ChatService {
                     t.getState().getValue());
         }
         return null;
-    }
-
-    /** JSON 数组字符串 -> 工具名列表 */
-    private List<String> parseToolNames(String toolsJson) {
-        if (StrUtil.isBlank(toolsJson)) {
-            return List.of();
-        }
-        return JSONUtil.toList(toolsJson, String.class);
     }
 }

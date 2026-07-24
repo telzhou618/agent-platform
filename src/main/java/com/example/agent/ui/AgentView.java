@@ -232,7 +232,7 @@ public class AgentView extends VerticalLayout {
         ConfirmDialog dialog = new ConfirmDialog("删除智能体",
                 "确定删除智能体「" + agent.getName() + "」吗？", "删除", e -> {
             try {
-                agentService.removeById(agent.getId());
+                agentService.deleteAgent(agent.getId());
                 refresh();
                 Notification.show("删除成功");
             } catch (Exception ex) {

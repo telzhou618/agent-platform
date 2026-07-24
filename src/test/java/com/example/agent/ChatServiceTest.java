@@ -1,6 +1,7 @@
 package com.example.agent;
 
 import cn.hutool.core.util.StrUtil;
+import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.agent.ChatChunk;
 import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -27,11 +29,20 @@ class ChatServiceTest {
     private ChatService chatService;
     @Autowired
     private AgentInfoService agentInfoService;
+    @Autowired
+    private AgentRegistry agentRegistry;
 
     @BeforeAll
     static void requireApiKey() {
         Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("YOKA_DASHSCOPE_API_KEY")),
                 "未设置 YOKA_DASHSCOPE_API_KEY，跳过端到端测试");
+    }
+
+    /** 启动注册：agent_info 表中的智能体应已注册为容器中的 ReActAgent 实例 */
+    @Test
+    void agentsRegisteredOnStartup() {
+        AgentInfo agent = agentInfoService.lambdaQuery().eq(AgentInfo::getName, "天气小助手").one();
+        assertNotNull(agentRegistry.find(agent.getId()), "智能体应在启动时注册到容器");
     }
 
     private List<ChatChunk> chatChunks(String sessionId, Long agentId, String text) {

@@ -192,7 +192,7 @@ public class ModelView extends VerticalLayout {
         ConfirmDialog dialog = new ConfirmDialog("删除模型",
                 "确定删除模型「" + model.getName() + "」吗？", "删除", e -> {
             try {
-                modelService.removeById(model.getId());
+                modelService.deleteModel(model.getId());
                 refresh();
                 Notification.show("删除成功");
             } catch (Exception ex) {

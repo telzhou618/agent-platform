@@ -1,7 +1,6 @@
 package com.example.agent.config;
 
 import cn.hutool.core.util.StrUtil;
-import com.example.agent.system.agent.DynamicAgentMiddleware;
 import com.example.agent.system.service.ToolService;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.GenerateOptions;
@@ -14,7 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * AgentScope 全局配置：默认模型 + 全局工具箱 + 全局唯一智能体
+ * AgentScope 全局配置：默认模型 + 全局工具箱 + 全局默认智能体（兜底）。
+ * 各智能体的 ReActAgent 实例由 AgentRegistry 按 agent_info 配置动态注册。
  */
 @Slf4j
 @Configuration
@@ -43,7 +43,8 @@ public class AgentScopeConfig {
     }
 
     /**
-     * 全局工具箱：启动时即扫描注册全部系统工具（必须在 ReActAgent 创建前完成）
+     * 全局工具箱：启动时即扫描注册全部系统工具（必须在 ReActAgent 创建前完成）。
+     * 各智能体的专属工具箱从这里取 AgentTool 实例组装。
      */
     @Bean
     public Toolkit toolkit(ToolService toolService) {
@@ -51,19 +52,16 @@ public class AgentScopeConfig {
     }
 
     /**
-     * 全局唯一智能体实例。
-     * 对话时的系统提示词、模型、工具由 {@link DynamicAgentMiddleware} 按智能体配置动态加载，
-     * 因此所有会话共用这一个实例。
+     * 全局默认智能体：未选择智能体或实例未注册时的兜底，使用默认模型、不暴露工具。
      */
     @Bean
-    public ReActAgent reactAgent(Model defaultModel, Toolkit toolkit, DynamicAgentMiddleware dynamicAgentMiddleware) {
+    public ReActAgent defaultAgent(Model defaultModel) {
         return ReActAgent.builder()
                 .name("agent-platform")
-                .description("agent-platform 全局智能体")
+                .description("agent-platform 默认智能体")
                 .sysPrompt("你是 agent-platform 的智能助手。")
                 .model(defaultModel)
-                .toolkit(toolkit)
-                .middleware(dynamicAgentMiddleware)
+                .toolkit(new Toolkit())
                 .build();
     }
 }
