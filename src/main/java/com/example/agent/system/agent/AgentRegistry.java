@@ -35,6 +35,9 @@ public class AgentRegistry {
     private static final String BEAN_PREFIX = "reactAgent#";
     /** 智能体未配置系统提示词时的兜底 */
     private static final String DEFAULT_SYS_PROMPT = "你是 agent-platform 的智能助手。";
+    /** 追加在智能体系统提示词后的默认要求 */
+    private static final String SYS_PROMPT_SUFFIX =
+            "请始终以结构化的方式组织输出（分点、分段，必要时使用表格），回答问题简洁明了。";
 
     private final ConfigurableApplicationContext applicationContext;
     private final ModelFactory modelFactory;
@@ -143,10 +146,16 @@ public class AgentRegistry {
         return ReActAgent.builder()
                 .name(agent.getName())
                 .description(StrUtil.nullToEmpty(agent.getDescription()))
-                .sysPrompt(StrUtil.blankToDefault(agent.getSysPrompt(), DEFAULT_SYS_PROMPT))
+                .sysPrompt(buildSysPrompt(agent))
                 .model(model)
                 .toolkit(agentToolkit)
                 .build();
+    }
+
+    /** 系统提示词 = 用户配置（空则兜底）+ 默认输出要求 */
+    private String buildSysPrompt(AgentInfo agent) {
+        return StrUtil.blankToDefault(agent.getSysPrompt(), DEFAULT_SYS_PROMPT)
+                + "\n" + SYS_PROMPT_SUFFIX;
     }
 
     private void closeQuietly(List<McpClientWrapper> clients) {

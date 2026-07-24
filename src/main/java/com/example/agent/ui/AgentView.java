@@ -169,6 +169,7 @@ public class AgentView extends VerticalLayout {
         TextArea sysPrompt = new TextArea("系统提示词");
         sysPrompt.setWidthFull();
         sysPrompt.setMinHeight("8em");
+        sysPrompt.setHelperText("保存后会自动追加默认要求：结构化方式输出、回答简洁明了");
 
         MultiSelectComboBox<String> tools = new MultiSelectComboBox<>("工具");
         tools.setItems(toolService.listToolNames());
