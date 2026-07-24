@@ -1,0 +1,211 @@
+/* ============ 首页 dashboard ============ */
+
+.home-title {
+    margin: 0;
+}
+
+.home-intro {
+    margin-top: 0;
+    color: var(--lumo-secondary-text-color);
+}
+
+/* 横向 flex 布局：自动换行、标准间距 */
+.home-flex-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    width: 100%;
+}
+
+.home-panels {
+    align-items: stretch;
+}
+
+/* ---------- 顶部统计卡片 ---------- */
+
+.stat-card {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m) var(--lumo-space-l);
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.stat-card-icon {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* 卡片主题色变体：左边框 + 图标配色 */
+.stat-card-blue {
+    border-left: 4px solid var(--lumo-primary-color);
+}
+
+.stat-card-blue .stat-card-icon {
+    color: var(--lumo-primary-color);
+    background: var(--lumo-primary-color-10pct);
+}
+
+.stat-card-green {
+    border-left: 4px solid var(--lumo-success-color);
+}
+
+.stat-card-green .stat-card-icon {
+    color: var(--lumo-success-color);
+    background: var(--lumo-success-color-10pct);
+}
+
+.stat-card-orange {
+    border-left: 4px solid #ed7c31;
+}
+
+.stat-card-orange .stat-card-icon {
+    color: #ed7c31;
+    background: rgba(237, 124, 49, 0.12);
+}
+
+.stat-card-purple {
+    border-left: 4px solid #7b5ea7;
+}
+
+.stat-card-purple .stat-card-icon {
+    color: #7b5ea7;
+    background: rgba(123, 94, 167, 0.12);
+}
+
+.stat-card-number {
+    font-size: var(--lumo-font-size-xxl);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-card-label {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+}
+
+/* ---------- 近 7 日对话趋势 ---------- */
+
+.trend-chart {
+    display: flex;
+    gap: var(--lumo-space-s);
+    height: 180px;
+}
+
+.trend-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.trend-count {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+}
+
+.trend-bar-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+/* 高度按比例由 Java 端动态内联设置，今日柱子用 trend-bar-today 高亮 */
+.trend-bar {
+    width: 60%;
+    max-width: 42px;
+    background: var(--lumo-primary-color-50pct);
+    border-radius: 4px 4px 0 0;
+}
+
+.trend-bar-today {
+    background: var(--lumo-primary-color);
+}
+
+.trend-label {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+    margin-top: var(--lumo-space-xs);
+}
+
+/* ---------- 最近活跃智能体 ---------- */
+
+.active-empty {
+    color: var(--lumo-secondary-text-color);
+    text-align: center;
+    padding: var(--lumo-space-l) 0;
+}
+
+.active-row {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    padding: var(--lumo-space-s) 0;
+}
+
+.active-row:not(:last-child) {
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.active-row-middle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.active-row-name {
+    font-weight: 600;
+}
+
+.active-row-metrics {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+}
+
+.active-row-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.active-row-rate {
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-success-text-color);
+    font-weight: 600;
+}
+
+.active-row-time {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-tertiary-text-color);
+}
+
+/* ---------- 面板容器：白底圆角边框 ---------- */
+
+.home-panel {
+    flex: 1;
+    min-width: 340px;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-sizing: border-box;
+}
+
+.home-panel-heading {
+    margin-top: 0;
+    font-size: var(--lumo-font-size-l);
+}
