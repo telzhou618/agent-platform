@@ -1,0 +1,43 @@
+/* ============ Markdown 渲染内容排版 ============ */
+
+.markdown p {
+    margin: 0 0 var(--lumo-space-xs) 0;
+}
+
+.markdown p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown ul,
+.markdown ol {
+    margin: var(--lumo-space-xs) 0;
+    padding-inline-start: var(--lumo-space-l);
+}
+
+.markdown pre {
+    background: var(--lumo-contrast-10pct);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    overflow-x: auto;
+}
+
+.markdown code {
+    font-size: 0.9em;
+}
+
+.markdown table {
+    border-collapse: collapse;
+    margin: var(--lumo-space-xs) 0;
+    font-size: var(--lumo-font-size-s);
+}
+
+.markdown th,
+.markdown td {
+    border: 1px solid var(--lumo-contrast-30pct);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+}
+
+.markdown th {
+    background: var(--lumo-contrast-5pct);
+    font-weight: 600;
+}
