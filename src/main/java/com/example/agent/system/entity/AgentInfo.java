@@ -25,6 +25,9 @@ public class AgentInfo extends BaseEntity {
     /** MCP 服务 ID 列表，JSON 数组 */
     private String mcpServers;
 
+    /** 知识库 ID 列表，JSON 数组 */
+    private String knowledgeBases;
+
     /** 描述 */
     private String description;
 }

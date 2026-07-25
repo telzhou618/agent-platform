@@ -3,10 +3,12 @@ package com.example.agent.system.agent;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.Model;
+import io.agentscope.core.rag.RAGMode;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.Toolkit;
 import io.agentscope.core.tool.mcp.McpClientWrapper;
@@ -25,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 智能体实例注册中心：按 agent_info 配置把 ReActAgent 动态注册为 Spring 单例 Bean，
  * 创建时即固化它的系统提示词、模型、系统工具和 MCP 服务工具。
  * 管理端新增/编辑 -> register 重建；删除 -> unregister；启动 -> 全量 register；
- * 模型或 MCP 服务变更/删除 -> onXxxChanged / onXxxDeleted 级联重建引用它的实例。
+ * 模型、MCP 服务或知识库变更/删除 -> onXxxChanged / onXxxDeleted 级联重建引用它的实例。
  */
 @Slf4j
 @Component
@@ -42,26 +44,30 @@ public class AgentRegistry {
     private final ConfigurableApplicationContext applicationContext;
     private final ModelFactory modelFactory;
     private final McpClientFactory mcpClientFactory;
+    private final KnowledgeFactory knowledgeFactory;
     /** 全局工具箱：仅用于取系统 AgentTool 实例，组装各智能体的专属工具箱 */
     private final Toolkit toolkit;
 
-    /** agentId -> 构建快照（智能体配置 + 模型 + MCP 服务），级联重建时使用 */
+    /** agentId -> 构建快照（智能体配置 + 模型 + MCP 服务 + 知识库），级联重建时使用 */
     private final Map<Long, BuildSnapshot> snapshots = new ConcurrentHashMap<>();
     /** agentId -> 该实例占用的 MCP 客户端，销毁实例时一并释放 */
     private final Map<Long, List<McpClientWrapper>> mcpClients = new ConcurrentHashMap<>();
 
     /** 注册智能体实例；已注册则先销毁重建（编辑场景） */
-    public synchronized void register(AgentInfo agent, ModelConfig modelConfig, List<McpServer> mcpServers) {
+    public synchronized void register(AgentInfo agent, ModelConfig modelConfig, List<McpServer> mcpServers,
+                                      List<KnowledgeBase> knowledgeBases) {
         if (agent == null || agent.getId() == null) {
             return;
         }
         unregister(agent.getId());
         List<McpClientWrapper> clients = new ArrayList<>();
+        List<KnowledgeBase> kbs = knowledgeBases == null ? List.of() : knowledgeBases;
         beanFactory().registerSingleton(beanName(agent.getId()),
                 build(agent, modelFactory.fromConfig(modelConfig),
-                        mcpServers == null ? List.of() : mcpServers, clients));
+                        mcpServers == null ? List.of() : mcpServers, kbs, clients));
         snapshots.put(agent.getId(),
-                new BuildSnapshot(agent, modelConfig, List.copyOf(mcpServers == null ? List.of() : mcpServers)));
+                new BuildSnapshot(agent, modelConfig, List.copyOf(mcpServers == null ? List.of() : mcpServers),
+                        List.copyOf(kbs)));
         mcpClients.put(agent.getId(), clients);
         log.info("注册智能体实例：{}（id={}）", agent.getName(), agent.getId());
     }
@@ -88,14 +94,14 @@ public class AgentRegistry {
     public synchronized void onModelChanged(ModelConfig fresh) {
         snapshots.values().stream()
                 .filter(s -> fresh.getId().equals(s.agent().getModelId()))
-                .forEach(s -> register(s.agent(), fresh, s.mcpServers()));
+                .forEach(s -> register(s.agent(), fresh, s.mcpServers(), s.knowledgeBases()));
     }
 
     /** 模型删除：引用它的智能体回退默认模型并重建 */
     public synchronized void onModelDeleted(Long modelId) {
         snapshots.values().stream()
                 .filter(s -> modelId.equals(s.agent().getModelId()))
-                .forEach(s -> register(s.agent(), null, s.mcpServers()));
+                .forEach(s -> register(s.agent(), null, s.mcpServers(), s.knowledgeBases()));
     }
 
     /** MCP 服务变更：重建引用它的全部智能体实例 */
@@ -104,7 +110,7 @@ public class AgentRegistry {
                 .filter(s -> references(s, fresh.getId()))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
                         .map(m -> fresh.getId().equals(m.getId()) ? fresh : m)
-                        .toList()));
+                        .toList(), s.knowledgeBases()));
     }
 
     /** MCP 服务删除：重建引用它的全部智能体实例（移除该服务的工具） */
@@ -113,6 +119,24 @@ public class AgentRegistry {
                 .filter(s -> references(s, mcpServerId))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
                         .filter(m -> !mcpServerId.equals(m.getId()))
+                        .toList(), s.knowledgeBases()));
+    }
+
+    /** 知识库变更：重建引用它的全部智能体实例 */
+    public synchronized void onKnowledgeChanged(KnowledgeBase fresh) {
+        snapshots.values().stream()
+                .filter(s -> referencesKnowledge(s, fresh.getId()))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases().stream()
+                        .map(k -> fresh.getId().equals(k.getId()) ? fresh : k)
+                        .toList()));
+    }
+
+    /** 知识库删除：重建引用它的全部智能体实例（移除该知识库） */
+    public synchronized void onKnowledgeDeleted(Long knowledgeBaseId) {
+        snapshots.values().stream()
+                .filter(s -> referencesKnowledge(s, knowledgeBaseId))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases().stream()
+                        .filter(k -> !knowledgeBaseId.equals(k.getId()))
                         .toList()));
     }
 
@@ -120,9 +144,15 @@ public class AgentRegistry {
         return snapshot.mcpServers().stream().anyMatch(m -> mcpServerId.equals(m.getId()));
     }
 
-    /** 组装实例：系统提示词 + 模型 + 专属工具箱（配置的系统工具 + 各 MCP 服务的工具） */
+    private boolean referencesKnowledge(BuildSnapshot snapshot, Long knowledgeBaseId) {
+        return snapshot.knowledgeBases().stream().anyMatch(k -> knowledgeBaseId.equals(k.getId()));
+    }
+
+    /** 组装实例：系统提示词 + 模型 + 专属工具箱（配置的系统工具 + 各 MCP 服务的工具）+ 知识库 */
+    // AgentScope 2.0.0 的 RAG API 标记为 deprecated-for-removal 但功能正常，按计划使用
+    @SuppressWarnings("deprecation")
     private ReActAgent build(AgentInfo agent, Model model, List<McpServer> mcpServers,
-                             List<McpClientWrapper> clientsOut) {
+                             List<KnowledgeBase> knowledgeBases, List<McpClientWrapper> clientsOut) {
         Toolkit agentToolkit = new Toolkit();
         for (String toolName : parseToolNames(agent.getTools())) {
             AgentTool tool = toolkit.getTool(toolName);
@@ -148,13 +178,29 @@ public class AgentRegistry {
                         agent.getName(), server.getName(), e.getMessage());
             }
         }
-        return ReActAgent.builder()
+        ReActAgent.Builder builder = ReActAgent.builder()
                 .name(agent.getName())
                 .description(StrUtil.nullToEmpty(agent.getDescription()))
                 .sysPrompt(buildSysPrompt(agent))
                 .model(model)
-                .toolkit(agentToolkit)
-                .build();
+                .toolkit(agentToolkit);
+        // 挂载知识库：单个构建失败只记日志跳过，不影响智能体注册
+        boolean hasKnowledge = false;
+        for (KnowledgeBase kb : knowledgeBases) {
+            try {
+                builder.knowledge(knowledgeFactory.fromConfig(kb));
+                hasKnowledge = true;
+                log.info("智能体「{}」挂载知识库「{}」", agent.getName(), kb.getName());
+            } catch (Exception e) {
+                log.warn("智能体「{}」挂载知识库「{}」失败，已跳过：{}",
+                        agent.getName(), kb.getName(), e.getMessage());
+            }
+        }
+        if (hasKnowledge) {
+            // AGENTIC 模式：模型通过 retrieve_knowledge 工具自主决定何时检索
+            builder.ragMode(RAGMode.AGENTIC);
+        }
+        return builder.build();
     }
 
     /** 系统提示词 = 用户配置（空则兜底）+ 默认输出要求 */
@@ -190,6 +236,7 @@ public class AgentRegistry {
     }
 
     /** 一次构建的全部输入，级联重建时回放 */
-    private record BuildSnapshot(AgentInfo agent, ModelConfig model, List<McpServer> mcpServers) {
+    private record BuildSnapshot(AgentInfo agent, ModelConfig model, List<McpServer> mcpServers,
+                                 List<KnowledgeBase> knowledgeBases) {
     }
 }

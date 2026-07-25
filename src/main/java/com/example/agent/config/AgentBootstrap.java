@@ -2,9 +2,11 @@ package com.example.agent.config;
 
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import cn.hutool.core.util.StrUtil;
@@ -34,6 +36,7 @@ public class AgentBootstrap implements ApplicationRunner {
     private final AgentInfoService agentInfoService;
     private final ModelConfigService modelConfigService;
     private final McpServerService mcpServerService;
+    private final KnowledgeBaseService knowledgeBaseService;
     private final AgentRegistry agentRegistry;
 
     @Override
@@ -43,12 +46,14 @@ public class AgentBootstrap implements ApplicationRunner {
                     .collect(Collectors.toMap(ModelConfig::getId, Function.identity()));
             Map<Long, McpServer> mcpServers = mcpServerService.list().stream()
                     .collect(Collectors.toMap(McpServer::getId, Function.identity()));
+            Map<Long, KnowledgeBase> knowledgeBases = knowledgeBaseService.list().stream()
+                    .collect(Collectors.toMap(KnowledgeBase::getId, Function.identity()));
             List<AgentInfo> agents = agentInfoService.list();
             int ok = 0;
             for (AgentInfo agent : agents) {
                 try {
                     agentRegistry.register(agent, models.get(agent.getModelId()),
-                            mcpServersOf(agent, mcpServers));
+                            mcpServersOf(agent, mcpServers), knowledgeBasesOf(agent, knowledgeBases));
                     ok++;
                 } catch (Exception e) {
                     log.error("注册智能体「{}」失败：{}", agent.getName(), e.getMessage());
@@ -66,6 +71,17 @@ public class AgentBootstrap implements ApplicationRunner {
             return List.of();
         }
         return JSONUtil.toList(agent.getMcpServers(), Long.class).stream()
+                .map(all::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /** 按 agent.knowledgeBases（JSON ID 数组）从全量 Map 中解析知识库列表 */
+    private List<KnowledgeBase> knowledgeBasesOf(AgentInfo agent, Map<Long, KnowledgeBase> all) {
+        if (StrUtil.isBlank(agent.getKnowledgeBases())) {
+            return List.of();
+        }
+        return JSONUtil.toList(agent.getKnowledgeBases(), Long.class).stream()
                 .map(all::get)
                 .filter(Objects::nonNull)
                 .toList();

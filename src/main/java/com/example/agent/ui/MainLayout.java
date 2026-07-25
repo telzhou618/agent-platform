@@ -44,6 +44,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("首页", HomeView.class, VaadinIcon.HOME));
         nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
+        nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
         nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));

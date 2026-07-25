@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.mapper.AgentInfoMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     private final AgentRegistry agentRegistry;
     private final ModelConfigService modelConfigService;
     private final McpServerService mcpServerService;
+    private final KnowledgeBaseService knowledgeBaseService;
 
     /** 分页查询智能体，关键字匹配名称 / 描述 */
     public Page<AgentInfo> pageAgents(String keyword, int page, int size) {
@@ -37,7 +39,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         saveOrUpdate(agent);
         agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
-                mcpServersOf(agent));
+                mcpServersOf(agent), knowledgeBasesOf(agent));
     }
 
     /** 删除智能体：落库后同步销毁容器中的实例 */
@@ -53,5 +55,14 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         List<Long> ids = JSONUtil.toList(agent.getMcpServers(), Long.class);
         return ids.isEmpty() ? List.of() : mcpServerService.listByIds(ids);
+    }
+
+    /** 解析 agent.knowledgeBases（JSON ID 数组）-> 知识库实体列表 */
+    public List<KnowledgeBase> knowledgeBasesOf(AgentInfo agent) {
+        if (StrUtil.isBlank(agent.getKnowledgeBases())) {
+            return List.of();
+        }
+        List<Long> ids = JSONUtil.toList(agent.getKnowledgeBases(), Long.class);
+        return ids.isEmpty() ? List.of() : knowledgeBaseService.listByIds(ids);
     }
 }

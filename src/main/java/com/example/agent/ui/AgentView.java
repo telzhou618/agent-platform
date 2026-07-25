@@ -6,9 +6,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.ToolService;
@@ -54,9 +56,17 @@ public class AgentView extends VerticalLayout {
     private final ModelConfigService modelService;
     private final ToolService toolService;
     private final McpServerService mcpServerService;
+    private final KnowledgeBaseService knowledgeBaseService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
+
+    /**
+     * 知识库类型 -> 展示名
+     */
+    private static final Map<String, String> KNOWLEDGE_TYPES = Map.of(
+            KnowledgeBase.TYPE_BAILIAN, "阿里云百炼",
+            KnowledgeBase.TYPE_DIFY, "Dify");
 
     /**
      * 模型 ID -> 模型，供 Grid 展示名称
@@ -64,11 +74,13 @@ public class AgentView extends VerticalLayout {
     private Map<Long, ModelConfig> modelMap = Map.of();
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
-                     ToolService toolService, McpServerService mcpServerService) {
+                     ToolService toolService, McpServerService mcpServerService,
+                     KnowledgeBaseService knowledgeBaseService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
         this.mcpServerService = mcpServerService;
+        this.knowledgeBaseService = knowledgeBaseService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -182,6 +194,13 @@ public class AgentView extends VerticalLayout {
         mcpServers.setItemLabelGenerator(McpServer::getName);
         mcpServers.setHelperText("可选服务来自「MCP服务管理」，保存后自动挂载其全部工具");
 
+        MultiSelectComboBox<KnowledgeBase> knowledgeBases = new MultiSelectComboBox<>("知识库");
+        List<KnowledgeBase> kbList = knowledgeBaseService.list();
+        knowledgeBases.setItems(kbList);
+        knowledgeBases.setItemLabelGenerator(k -> k.getName() + "（"
+                + KNOWLEDGE_TYPES.getOrDefault(k.getType(), StrUtil.nullToEmpty(k.getType())) + "）");
+        knowledgeBases.setHelperText("可选知识库来自「知识库管理」，保存后自动挂载检索能力");
+
         TextField description = new TextField("描述");
 
         // Binder 绑定与校验：校验失败时错误信息红色显示在字段下方
@@ -223,6 +242,20 @@ public class AgentView extends VerticalLayout {
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .bind(AgentInfo::getMcpServers, AgentInfo::setMcpServers);
+        // 知识库多选 <-> JSON ID 数组字符串
+        Map<Long, KnowledgeBase> kbById = kbList.stream()
+                .collect(Collectors.toMap(KnowledgeBase::getId, Function.identity()));
+        binder.forField(knowledgeBases)
+                .withConverter(
+                        selected -> CollUtil.isEmpty(selected) ? null
+                                : JSONUtil.toJsonStr(selected.stream()
+                                .map(KnowledgeBase::getId).sorted().toList()),
+                        json -> StrUtil.isBlank(json) ? Set.of()
+                                : JSONUtil.toList(json, Long.class).stream()
+                                .map(kbById::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)))
+                .bind(AgentInfo::getKnowledgeBases, AgentInfo::setKnowledgeBases);
         binder.bind(description, AgentInfo::getDescription, AgentInfo::setDescription);
 
         name.setRequiredIndicatorVisible(true);
@@ -230,11 +263,12 @@ public class AgentView extends VerticalLayout {
 
         binder.readBean(agent);
 
-        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers);
+        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers, knowledgeBases);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(sysPrompt, 2);
         form.setColspan(tools, 2);
         form.setColspan(mcpServers, 2);
+        form.setColspan(knowledgeBases, 2);
         dialog.add(form);
 
         Button cancel = new Button("取消", e -> dialog.close());

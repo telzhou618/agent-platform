@@ -34,6 +34,7 @@ create table agent_info (
     sys_prompt  text          null comment '系统提示词',
     tools       varchar(1024) null comment '工具名称列表，JSON 数组',
     mcp_servers varchar(1024) null comment 'MCP 服务 ID 列表，JSON 数组',
+    knowledge_bases varchar(1024) null comment '知识库 ID 列表，JSON 数组',
     description varchar(256)  null comment '描述',
     create_time datetime      null comment '创建时间',
     update_time datetime      null comment '更新时间',
@@ -57,6 +58,23 @@ create table mcp_server (
     update_time datetime      null comment '更新时间',
     deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除'
 ) engine = innodb comment 'MCP 服务表';
+
+-- ----------------------------
+-- 知识库表
+-- ----------------------------
+drop table if exists knowledge_base;
+create table knowledge_base (
+    id              bigint auto_increment primary key,
+    name            varchar(64)  not null comment '知识库名称',
+    type            varchar(32)  not null comment '类型：bailian/dify，未来可扩展',
+    config          text         null comment '类型相关配置，JSON 对象',
+    retrieve_limit  int          not null default 5 comment '默认检索条数',
+    score_threshold double       not null default 0.5 comment '默认分数阈值',
+    remark          varchar(256) null comment '备注',
+    create_time     datetime     null comment '创建时间',
+    update_time     datetime     null comment '更新时间',
+    deleted         tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除'
+) engine = innodb comment '知识库表';
 
 -- ----------------------------
 -- 对话记录表（dashboard 统计数据来源）

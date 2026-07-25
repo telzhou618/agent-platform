@@ -68,6 +68,17 @@
             <artifactId>agentscope-extensions-model-anthropic</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
+        <!-- AgentScope RAG 扩展：阿里云百炼 / Dify 知识库检索 -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-rag-bailian</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-rag-dify</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
