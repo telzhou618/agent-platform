@@ -139,19 +139,26 @@ public class McpServerView extends VerticalLayout {
         boolean isNew = server.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增MCP服务" : "编辑MCP服务");
+        dialog.setWidth("640px");
 
         TextField name = new TextField("名称");
+        name.setPlaceholder("如：文件系统服务");
+        name.setMaxLength(64);
         TextField description = new TextField("描述");
+        description.setMaxLength(256);
         Select<String> type = new Select<>();
         type.setLabel("类型");
         type.setItems(TYPES.keySet());
         type.setItemLabelGenerator(TYPES::get);
         TextField url = new TextField("URL");
         url.setWidthFull();
+        url.setPlaceholder("https://example.com/mcp");
+        url.setMaxLength(512);
         IntegerField timeout = new IntegerField("超时（毫秒）");
         timeout.setMin(1000);
         timeout.setStepButtonsVisible(true);
         timeout.setStep(1000);
+        timeout.setHelperText("最小 1000 毫秒，默认 30000");
 
         HeadersEditor headersEditor = new HeadersEditor(server.getHeaders());
 
@@ -159,7 +166,9 @@ public class McpServerView extends VerticalLayout {
         binder.forField(name).asRequired("名称不能为空").bind(McpServer::getName, McpServer::setName);
         binder.bind(description, McpServer::getDescription, McpServer::setDescription);
         binder.forField(type).asRequired("请选择类型").bind(McpServer::getType, McpServer::setType);
-        binder.forField(url).asRequired("URL 不能为空").bind(McpServer::getUrl, McpServer::setUrl);
+        binder.forField(url).asRequired("URL 不能为空")
+                .withValidator(FormValidators.url())
+                .bind(McpServer::getUrl, McpServer::setUrl);
         binder.forField(timeout).asRequired("超时不能为空").bind(McpServer::getTimeout, McpServer::setTimeout);
 
         name.setRequiredIndicatorVisible(true);

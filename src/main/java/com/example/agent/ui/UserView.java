@@ -117,20 +117,30 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
         boolean isNew = user.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增用户" : "编辑用户");
+        dialog.setWidth("480px");
 
         TextField username = new TextField("用户名");
+        username.setPlaceholder("登录账号");
+        username.setMaxLength(64);
         PasswordField password = new PasswordField("密码");
+        password.setPlaceholder("至少 6 位");
         password.setHelperText(isNew ? "必填" : "留空表示不修改密码");
         TextField phone = new TextField("手机号");
+        phone.setPlaceholder("11 位手机号");
+        phone.setMaxLength(32);
         TextField email = new TextField("邮箱");
+        email.setPlaceholder("name@example.com");
+        email.setMaxLength(128);
         Checkbox admin = new Checkbox("管理员（可看和操作所有数据）");
 
         Binder<SysUser> binder = new Binder<>(SysUser.class);
         binder.forField(username)
                 .asRequired("用户名不能为空")
                 .bind(SysUser::getUsername, SysUser::setUsername);
-        binder.bind(phone, SysUser::getPhone, SysUser::setPhone);
-        binder.bind(email, SysUser::getEmail, SysUser::setEmail);
+        binder.forField(phone).withValidator(FormValidators.mobile())
+                .bind(SysUser::getPhone, SysUser::setPhone);
+        binder.forField(email).withValidator(FormValidators.email())
+                .bind(SysUser::getEmail, SysUser::setEmail);
         binder.forField(admin)
                 .withConverter(v -> v ? 1 : 0, v -> Integer.valueOf(1).equals(v))
                 .bind(SysUser::getIsAdmin, SysUser::setIsAdmin);
@@ -150,6 +160,10 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
             }
             if (isNew && StrUtil.isBlank(password.getValue())) {
                 Notify.error("新用户必须设置密码");
+                return;
+            }
+            if (StrUtil.isNotBlank(password.getValue()) && password.getValue().length() < 6) {
+                Notify.error("密码至少 6 位");
                 return;
             }
             // 留空交给 service 处理为“不修改密码”

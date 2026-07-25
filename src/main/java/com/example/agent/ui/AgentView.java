@@ -171,8 +171,11 @@ public class AgentView extends VerticalLayout {
         boolean isNew = agent.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增智能体" : "编辑智能体");
+        dialog.setWidth("640px");
 
         TextField name = new TextField("名称");
+        name.setPlaceholder("如：天气小助手");
+        name.setMaxLength(64);
 
         ComboBox<ModelConfig> model = new ComboBox<>("模型");
         List<ModelConfig> models = modelService.list();
@@ -202,6 +205,7 @@ public class AgentView extends VerticalLayout {
         knowledgeBases.setHelperText("可选知识库来自「知识库管理」，保存后自动挂载检索能力");
 
         TextField description = new TextField("描述");
+        description.setMaxLength(256);
 
         // Binder 绑定与校验：校验失败时错误信息红色显示在字段下方
         Binder<AgentInfo> binder = new Binder<>(AgentInfo.class);

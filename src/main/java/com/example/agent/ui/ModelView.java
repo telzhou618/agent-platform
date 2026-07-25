@@ -21,6 +21,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -127,18 +128,27 @@ public class ModelView extends VerticalLayout {
         boolean isNew = model.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增模型" : "编辑模型");
+        dialog.setWidth("640px");
 
         TextField name = new TextField("名称");
+        name.setPlaceholder("如：通义千问 Plus");
+        name.setMaxLength(64);
         Select<String> provider = new Select<>();
         provider.setLabel("供应商");
         provider.setItems(PROVIDERS.keySet());
         provider.setItemLabelGenerator(PROVIDERS::get);
         TextField modelName = new TextField("模型标识");
         modelName.setHelperText("如 qwen-plus、gpt-4o、claude-sonnet-4");
+        modelName.setMaxLength(128);
         TextField baseUrl = new TextField("API 地址");
-        TextField apiKey = new TextField("API Key");
+        baseUrl.setPlaceholder("https://api.example.com/v1");
+        baseUrl.setMaxLength(256);
+        PasswordField apiKey = new PasswordField("API Key");
+        apiKey.setPlaceholder("sk-...");
+        apiKey.setMaxLength(256);
         TextArea remark = new TextArea("备注");
         remark.setMaxHeight("8em");
+        remark.setMaxLength(256);
 
         // Binder 绑定与校验：校验失败时错误信息红色显示在字段下方
         Binder<ModelConfig> binder = new Binder<>(ModelConfig.class);
@@ -152,6 +162,7 @@ public class ModelView extends VerticalLayout {
                 .asRequired("模型标识不能为空")
                 .bind(ModelConfig::getModel, ModelConfig::setModel);
         binder.forField(baseUrl)
+                .withValidator(FormValidators.url())
                 .withValidator(url -> !"custom".equals(provider.getValue()) || StrUtil.isNotBlank(url),
                         "自定义供应商必须填写 API 地址")
                 .bind(ModelConfig::getBaseUrl, ModelConfig::setBaseUrl);

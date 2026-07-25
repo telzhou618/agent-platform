@@ -133,6 +133,8 @@ public class KnowledgeView extends VerticalLayout {
         dialog.setWidth("640px");
 
         TextField name = new TextField("名称");
+        name.setPlaceholder("如：产品文档库");
+        name.setMaxLength(64);
         Select<String> type = new Select<>();
         type.setLabel("类型");
         type.setItems(TYPES.keySet());
@@ -140,18 +142,25 @@ public class KnowledgeView extends VerticalLayout {
         IntegerField retrieveLimit = new IntegerField("检索条数");
         retrieveLimit.setMin(1);
         retrieveLimit.setStepButtonsVisible(true);
+        retrieveLimit.setHelperText("每次检索返回的最大文档数");
         NumberField scoreThreshold = new NumberField("分数阈值");
         scoreThreshold.setMin(0);
         scoreThreshold.setMax(1);
         scoreThreshold.setStep(0.1);
         scoreThreshold.setStepButtonsVisible(true);
+        scoreThreshold.setHelperText("0~1，越高匹配越严格");
         TextField remark = new TextField("备注");
+        remark.setMaxLength(256);
 
         // 百炼专属字段（不挂 Binder，手动 get/set）
         TextField accessKeyId = new TextField("AccessKeyId");
+        accessKeyId.setPlaceholder("阿里云 AccessKeyId");
         PasswordField accessKeySecret = new PasswordField("AccessKeySecret");
+        accessKeySecret.setPlaceholder("阿里云 AccessKeySecret");
         TextField workspaceId = new TextField("WorkspaceId");
+        workspaceId.setPlaceholder("百炼业务空间 ID");
         TextField indexId = new TextField("IndexId");
+        indexId.setPlaceholder("知识索引 ID");
         TextField endpoint = new TextField("Endpoint");
         endpoint.setPlaceholder("默认 bailian.cn-beijing.aliyuncs.com");
         endpoint.setWidthFull();
@@ -164,7 +173,9 @@ public class KnowledgeView extends VerticalLayout {
 
         // Dify 专属字段（不挂 Binder，手动 get/set）
         PasswordField apiKey = new PasswordField("API Key");
+        apiKey.setPlaceholder("Dify 知识库 API Key");
         TextField datasetId = new TextField("DatasetId");
+        datasetId.setPlaceholder("Dify 知识库 Dataset ID");
         TextField baseUrl = new TextField("API 地址");
         baseUrl.setPlaceholder("默认 https://api.dify.ai/v1");
         baseUrl.setWidthFull();
@@ -298,6 +309,11 @@ public class KnowledgeView extends VerticalLayout {
         } else if (KnowledgeBase.TYPE_DIFY.equals(type)) {
             if (StrUtil.hasBlank(apiKey.getValue(), datasetId.getValue())) {
                 Notify.error("Dify 知识库必须填写 API Key / DatasetId");
+                return null;
+            }
+            if (StrUtil.isNotBlank(baseUrl.getValue())
+                    && !baseUrl.getValue().trim().matches(FormValidators.URL_PATTERN)) {
+                Notify.error("API 地址应以 http:// 或 https:// 开头");
                 return null;
             }
             config.set("apiKey", apiKey.getValue());

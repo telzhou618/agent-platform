@@ -128,8 +128,11 @@ public class ApiKeyView extends VerticalLayout {
         dialog.setWidth("480px");
 
         TextField name = new TextField("名称");
+        name.setPlaceholder("如：生产环境调用");
+        name.setMaxLength(64);
         Checkbox enabled = new Checkbox("启用");
         TextField remark = new TextField("备注");
+        remark.setMaxLength(256);
 
         Binder<ApiKey> binder = new Binder<>(ApiKey.class);
         binder.forField(name).asRequired("名称不能为空").bind(ApiKey::getName, ApiKey::setName);
