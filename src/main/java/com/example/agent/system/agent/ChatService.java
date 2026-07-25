@@ -1,6 +1,7 @@
 package com.example.agent.system.agent;
 
 import cn.hutool.core.util.IdUtil;
+import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.service.ChatRecordService;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.RuntimeContext;
@@ -33,8 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class ChatService {
 
-    /** 用户 ID 暂时固定，将来接入登录后再替换 */
-    public static final String DEFAULT_USER_ID = "default";
+    /** 无登录上下文（如单元测试）时的兜底用户 ID */
+    private static final String FALLBACK_USER_ID = "default";
 
     private final ReActAgent defaultAgent;
     private final AgentRegistry agentRegistry;
@@ -43,6 +44,12 @@ public class ChatService {
     /** 生成新会话 ID */
     public String newSessionId() {
         return IdUtil.simpleUUID();
+    }
+
+    /** 当前登录用户 ID（字符串形式），无登录上下文时回退 default */
+    private static String currentUserId() {
+        Long id = LoginHelper.currentUserId();
+        return id == null ? FALLBACK_USER_ID : String.valueOf(id);
     }
 
     /** 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息 */
@@ -54,14 +61,14 @@ public class ChatService {
 
         // mcp 元数据, 会自动传递给下游的 MCP 服务
         McpMeta meta = new McpMeta(Map.of(
-                "userId", 1,
+                "userId", currentUserId(),
                 "sessionId", sessionId,
                 "traceId", IdUtil.fastSimpleUUID()
         ));
 
         RuntimeContext ctx = RuntimeContext.builder()
                 .sessionId(sessionId)
-                .userId(DEFAULT_USER_ID)
+                .userId(currentUserId())
                 .put(McpMeta.class, meta)
                 .build();
         // 平台工具均由管理员显式配置，不做人工确认：BYPASS 跳过权限评估。

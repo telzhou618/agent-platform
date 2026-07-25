@@ -27,4 +27,7 @@ public class ModelConfig extends BaseEntity {
 
     /** 备注 */
     private String remark;
+
+    /** 创建人（sys_user.id），管理员可看全部 */
+    private Long userId;
 }

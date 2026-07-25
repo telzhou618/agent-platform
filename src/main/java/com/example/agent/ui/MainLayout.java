@@ -1,5 +1,7 @@
 package com.example.agent.ui;
 
+import com.example.agent.system.auth.LoginHelper;
+import com.example.agent.system.auth.LoginUser;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
@@ -38,6 +40,22 @@ public class MainLayout extends AppLayout {
         header.setPadding(true);
         header.expand(logo);
         header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+
+        // 右侧：当前登录用户 + 退出
+        LoginUser currentUser = LoginHelper.currentUser();
+        if (currentUser != null) {
+            Span username = new Span(currentUser.getUsername()
+                    + (LoginHelper.isAdmin() ? "（管理员）" : ""));
+            username.getStyle()
+                    .set("color", "var(--lumo-secondary-text-color)")
+                    .set("font-size", "var(--lumo-font-size-s)");
+            Button logout = new Button("退出", new Icon(VaadinIcon.SIGN_OUT), e -> {
+                LoginHelper.logout();
+                getUI().ifPresent(ui -> ui.navigate("login"));
+            });
+            logout.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+            header.add(username, logout);
+        }
         addToNavbar(header);
 
         SideNav nav = new SideNav();
@@ -48,6 +66,10 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
         nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
+        // 用户管理仅管理员可见
+        if (LoginHelper.isAdmin()) {
+            nav.addItem(item("用户管理", UserView.class, VaadinIcon.USERS));
+        }
         addToDrawer(nav);
 
         // 主内容区底部居中的版权信息

@@ -32,4 +32,7 @@ public class McpServer extends BaseEntity {
 
     /** 超时时间（毫秒） */
     private Integer timeout;
+
+    /** 创建人（sys_user.id），管理员可看全部 */
+    private Long userId;
 }

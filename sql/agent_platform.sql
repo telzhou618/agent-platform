@@ -7,6 +7,22 @@ create database agent_platform default character set utf8mb4 collate utf8mb4_gen
 use agent_platform;
 
 -- ----------------------------
+-- 管理端用户表
+-- ----------------------------
+drop table if exists sys_user;
+create table sys_user (
+    id          bigint auto_increment primary key,
+    username    varchar(64)  not null comment '登录账号',
+    password    varchar(128) not null comment '密码（BCrypt）',
+    phone       varchar(32)  null comment '手机号',
+    email       varchar(128) null comment '邮箱',
+    is_admin    tinyint      not null default 0 comment '是否管理员：1 是 0 否',
+    create_time datetime     null comment '创建时间',
+    update_time datetime     null comment '更新时间',
+    deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除'
+) engine = innodb comment '管理端用户表';
+
+-- ----------------------------
 -- 模型配置表
 -- ----------------------------
 drop table if exists model_config;
@@ -18,9 +34,11 @@ create table model_config (
     base_url    varchar(256) null comment 'API 地址，自定义供应商时必填',
     api_key     varchar(256) null comment 'API Key',
     remark      varchar(256) null comment '备注',
+    user_id     bigint       null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime     null comment '创建时间',
     update_time datetime     null comment '更新时间',
-    deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除'
+    deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_user_id (user_id)
 ) engine = innodb comment '模型配置表';
 
 -- ----------------------------
@@ -36,10 +54,12 @@ create table agent_info (
     mcp_servers varchar(1024) null comment 'MCP 服务 ID 列表，JSON 数组',
     knowledge_bases varchar(1024) null comment '知识库 ID 列表，JSON 数组',
     description varchar(256)  null comment '描述',
+    user_id     bigint        null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime      null comment '创建时间',
     update_time datetime      null comment '更新时间',
     deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除',
-    key idx_model_id (model_id)
+    key idx_model_id (model_id),
+    key idx_user_id (user_id)
 ) engine = innodb comment '智能体表';
 
 -- ----------------------------
@@ -54,9 +74,11 @@ create table mcp_server (
     url         varchar(512)  not null comment '服务地址',
     headers     varchar(2048) null comment '请求头，JSON 对象 {key:value}',
     timeout     int           not null default 30000 comment '超时时间（毫秒）',
+    user_id     bigint        null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime      null comment '创建时间',
     update_time datetime      null comment '更新时间',
-    deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除'
+    deleted     tinyint       not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_user_id (user_id)
 ) engine = innodb comment 'MCP 服务表';
 
 -- ----------------------------
@@ -71,9 +93,11 @@ create table knowledge_base (
     retrieve_limit  int          not null default 5 comment '默认检索条数',
     score_threshold double       not null default 0.5 comment '默认分数阈值',
     remark          varchar(256) null comment '备注',
+    user_id         bigint       null comment '创建人（sys_user.id），管理员可看全部',
     create_time     datetime     null comment '创建时间',
     update_time     datetime     null comment '更新时间',
-    deleted         tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除'
+    deleted         tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_user_id (user_id)
 ) engine = innodb comment '知识库表';
 
 -- ----------------------------
@@ -95,12 +119,12 @@ create table chat_record (
 ) engine = innodb comment '对话记录表';
 
 -- ----------------------------
--- 种子数据
+-- 种子数据（user_id=1 归内置管理员，admin 账号由应用启动时自动创建：admin/admin123）
 -- ----------------------------
-insert into model_config (name, provider, model, base_url, api_key, remark, create_time, update_time) values
-('通义千问 Flash', 'dashscope', 'qwen-flash', null, '', '阿里云百炼平台，base_url 留空用默认端点', now(), now()),
-('GPT-4o', 'openai', 'gpt-4o', 'https://api.openai.com/v1', '', 'OpenAI 官方', now(), now()),
-('Claude Sonnet', 'anthropic', 'claude-sonnet-4-20250514', 'https://api.anthropic.com', '', 'Anthropic 官方', now(), now());
+insert into model_config (name, provider, model, base_url, api_key, remark, user_id, create_time, update_time) values
+('通义千问 Flash', 'dashscope', 'qwen-flash', null, '', '阿里云百炼平台，base_url 留空用默认端点', 1, now(), now()),
+('GPT-4o', 'openai', 'gpt-4o', 'https://api.openai.com/v1', '', 'OpenAI 官方', 1, now(), now()),
+('Claude Sonnet', 'anthropic', 'claude-sonnet-4-20250514', 'https://api.anthropic.com', '', 'Anthropic 官方', 1, now(), now());
 
-insert into agent_info (name, model_id, sys_prompt, tools, description, create_time, update_time) values
-('天气小助手', 1, '你是一个贴心的天气助手，回答用户关于天气和日期的问题。', '["get_weather","get_current_date","get_current_time"]', '示例智能体：查询天气和日期', now(), now());
+insert into agent_info (name, model_id, sys_prompt, tools, description, user_id, create_time, update_time) values
+('天气小助手', 1, '你是一个贴心的天气助手，回答用户关于天气和日期的问题。', '["get_weather","get_current_date","get_current_time"]', '示例智能体：查询天气和日期', 1, now(), now());

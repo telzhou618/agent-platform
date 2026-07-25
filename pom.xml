@@ -23,6 +23,7 @@
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <agentscope.version>2.0.0</agentscope.version>
         <hutool.version>5.8.32</hutool.version>
+        <sa-token.version>1.39.0</sa-token.version>
     </properties>
 
     <dependencyManagement>
@@ -83,6 +84,21 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
+        </dependency>
+        <!-- sa-token 登录认证 + Redis 会话持久化 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <version>${sa-token.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>${sa-token.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <!-- Markdown 渲染：对话内容富文本展示 -->
         <dependency>

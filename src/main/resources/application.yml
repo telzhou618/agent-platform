@@ -9,6 +9,10 @@ spring:
     url: jdbc:mysql://localhost:3306/agent_platform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: root
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 mybatis-plus:
   global-config:
@@ -21,3 +25,10 @@ mybatis-plus:
 vaadin:
   # 限定 Vaadin 类扫描范围，加快启动
   allowed-packages: com.example.agent
+
+# sa-token 登录会话配置（会话持久化到 Redis，重启不丢）
+sa-token:
+  token-name: satoken
+  timeout: 604800
+  is-log: false
+  is-read-cookie: true
