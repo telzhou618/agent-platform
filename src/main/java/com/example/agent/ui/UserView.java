@@ -94,6 +94,10 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
     private Component actionButtons(SysUser user) {
         Button edit = new Button("编辑", e -> openDialog(user));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        // 管理员账号不可删除，不渲染删除按钮
+        if (Integer.valueOf(1).equals(user.getIsAdmin())) {
+            return new HorizontalLayout(edit);
+        }
         Button delete = new Button("删除", e -> confirmDelete(user));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         return new HorizontalLayout(edit, delete);

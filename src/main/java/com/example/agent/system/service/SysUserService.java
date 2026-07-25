@@ -50,11 +50,15 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
         saveOrUpdate(user);
     }
 
-    /** 删除用户（仅管理员），内置管理员 admin 不可删除 */
+    /** 删除用户（仅管理员可执行）；管理员账号不可删除 */
     public void deleteUser(Long id) {
         checkAdmin();
-        if (id != null && id == 1L) {
-            throw new IllegalArgumentException("内置管理员不可删除");
+        SysUser user = getById(id);
+        if (user == null) {
+            return;
+        }
+        if (Integer.valueOf(1).equals(user.getIsAdmin())) {
+            throw new IllegalArgumentException("管理员账号不可删除");
         }
         removeById(id);
     }

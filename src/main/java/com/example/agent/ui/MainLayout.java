@@ -6,6 +6,7 @@ import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
@@ -19,6 +20,7 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 import java.time.Year;
 
 /** 主布局：顶部栏 + 经典管理后台侧边导航 */
+@StyleSheet("context://styles/side-nav.css")
 public class MainLayout extends AppLayout {
 
     private final Div footer = new Div();
