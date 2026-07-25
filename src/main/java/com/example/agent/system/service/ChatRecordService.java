@@ -1,6 +1,7 @@
 package com.example.agent.system.service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.dto.AgentActivityStat;
 import com.example.agent.system.dto.DailyCount;
 import com.example.agent.system.entity.ChatRecord;
@@ -46,20 +47,25 @@ public class ChatRecordService extends ServiceImpl<ChatRecordMapper, ChatRecord>
         });
     }
 
-    /** 最近活跃的智能体统计（TOP 5，按最近活跃时间倒序） */
+    /** 最近活跃的智能体统计（TOP 5，按最近活跃时间倒序），普通用户只看自己智能体的数据 */
     public List<AgentActivityStat> topActiveAgents() {
-        return baseMapper.topActiveAgents(LocalDateTime.now().minusDays(TREND_DAYS), TOP_LIMIT);
+        return baseMapper.topActiveAgents(LocalDateTime.now().minusDays(TREND_DAYS), TOP_LIMIT, scopeUserId());
     }
 
-    /** 近 7 日对话趋势：补齐没有数据的日期，返回恰好 7 天（旧 -> 新） */
+    /** 近 7 日对话趋势：补齐没有数据的日期，返回恰好 7 天（旧 -> 新），普通用户只看自己智能体的数据 */
     public List<DailyCount> weeklyTrend() {
         LocalDate today = LocalDate.now();
         LocalDate since = today.minusDays(TREND_DAYS - 1L);
-        Map<LocalDate, DailyCount> byDate = baseMapper.dailyCounts(since.atStartOfDay()).stream()
+        Map<LocalDate, DailyCount> byDate = baseMapper.dailyCounts(since.atStartOfDay(), scopeUserId()).stream()
                 .collect(Collectors.toMap(DailyCount::getDate, Function.identity()));
         return IntStream.range(0, TREND_DAYS)
                 .mapToObj(since::plusDays)
                 .map(date -> byDate.getOrDefault(date, new DailyCount(date, 0L)))
                 .toList();
+    }
+
+    /** 统计数据权限范围：管理员看全部（null 不过滤），普通用户只统计自己名下的智能体 */
+    private Long scopeUserId() {
+        return LoginHelper.isAdmin() ? null : LoginHelper.currentUserId();
     }
 }

@@ -67,6 +67,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
         nav.addItem(item("工具管理", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
+        nav.addItem(item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY));
         nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
         // 用户管理仅管理员可见
         if (LoginHelper.isAdmin()) {

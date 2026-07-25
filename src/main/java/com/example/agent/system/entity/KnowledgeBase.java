@@ -1,5 +1,7 @@
 package com.example.agent.system.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,5 +36,6 @@ public class KnowledgeBase extends BaseEntity {
     private String remark;
 
     /** 创建人（sys_user.id），管理员可看全部 */
+    @TableField(fill = FieldFill.INSERT)
     private Long userId;
 }

@@ -6,26 +6,20 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/** 模型配置 */
+/** ApiKey（将来用于访问智能体） */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("model_config")
-public class ModelConfig extends BaseEntity {
+@TableName("api_key")
+public class ApiKey extends BaseEntity {
 
-    /** 模型名称（展示用） */
+    /** ApiKey 名称 */
     private String name;
 
-    /** 供应商：dashscope/openai/anthropic/custom 自定义 */
-    private String provider;
-
-    /** 模型标识，如 qwen-plus、gpt-4o、claude-sonnet-4 */
-    private String model;
-
-    /** API 地址，自定义供应商时必填 */
-    private String baseUrl;
-
-    /** API Key */
+    /** ApiKey 值（ak- 前缀，全局唯一） */
     private String apiKey;
+
+    /** 状态：1 启用 0 禁用 */
+    private Integer status;
 
     /** 备注 */
     private String remark;

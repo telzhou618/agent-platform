@@ -101,6 +101,24 @@ create table knowledge_base (
 ) engine = innodb comment '知识库表';
 
 -- ----------------------------
+-- ApiKey 表（将来用于访问智能体）
+-- ----------------------------
+drop table if exists api_key;
+create table api_key (
+    id          bigint auto_increment primary key,
+    name        varchar(64)  not null comment 'ApiKey 名称',
+    api_key     varchar(80)  not null comment 'ApiKey 值（ak- 前缀，全局唯一）',
+    status      tinyint      not null default 1 comment '状态：1 启用 0 禁用',
+    remark      varchar(256) null comment '备注',
+    user_id     bigint       null comment '创建人（sys_user.id），管理员可看全部',
+    create_time datetime     null comment '创建时间',
+    update_time datetime     null comment '更新时间',
+    deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    unique key uk_api_key (api_key),
+    key idx_user_id (user_id)
+) engine = innodb comment 'ApiKey 表（将来用于访问智能体）';
+
+-- ----------------------------
 -- 对话记录表（dashboard 统计数据来源）
 -- ----------------------------
 drop table if exists chat_record;
