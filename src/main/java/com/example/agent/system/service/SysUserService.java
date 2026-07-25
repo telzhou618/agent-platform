@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.entity.SysUser;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
     }
 
     /** 保存用户：用户名查重；新增必须设置密码，编辑时密码留空表示不修改（仅管理员） */
+    @OperationLog(module = "用户管理", action = "保存", summary = "#user.username")
     public void saveUser(SysUser user) {
         checkAdmin();
         SysUser exist = lambdaQuery().eq(SysUser::getUsername, user.getUsername()).one();
@@ -51,6 +53,7 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
     }
 
     /** 删除用户（仅管理员可执行）；管理员账号不可删除 */
+    @OperationLog(module = "用户管理", action = "删除", summary = "#id")
     public void deleteUser(Long id) {
         checkAdmin();
         SysUser user = getById(id);
@@ -64,6 +67,7 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
     }
 
     /** 登录认证：成功返回用户，失败返回 null */
+    @OperationLog(module = "用户登录", action = "登录", summary = "#username", successByResult = true)
     public SysUser authenticate(String username, String rawPassword) {
         if (StrUtil.isBlank(username) || StrUtil.isBlank(rawPassword)) {
             return null;

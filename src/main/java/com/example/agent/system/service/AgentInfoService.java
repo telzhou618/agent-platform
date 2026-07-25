@@ -8,6 +8,7 @@ import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.AgentInfoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     }
 
     /** 保存智能体（新增/编辑）：落库后同步注册/重建容器中的实例 */
+    @OperationLog(module = "智能体管理", action = "保存", summary = "#agent.name")
     public void saveAgent(AgentInfo agent) {
         if (agent.getModelId() == null) {
             throw new IllegalArgumentException("请选择模型");
@@ -43,6 +45,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     }
 
     /** 删除智能体：落库后同步销毁容器中的实例 */
+    @OperationLog(module = "智能体管理", action = "删除", summary = "#id")
     public void deleteAgent(Long id) {
         removeById(id);
         agentRegistry.unregister(id);

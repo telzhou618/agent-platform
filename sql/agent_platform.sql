@@ -119,6 +119,24 @@ create table api_key (
 ) engine = innodb comment 'ApiKey 表（将来用于访问智能体）';
 
 -- ----------------------------
+-- 操作日志表（AOP 记录，仅管理员查看）
+-- ----------------------------
+drop table if exists operation_log;
+create table operation_log (
+    id          bigint auto_increment primary key,
+    user_id     bigint       null comment '操作人（sys_user.id），未登录为 null',
+    username    varchar(64)  null comment '操作人账号（冗余，防用户删除后丢失）',
+    module      varchar(32)  not null comment '模块，如 模型管理',
+    action      varchar(16)  not null comment '操作，如 保存/删除/登录',
+    summary     varchar(512) null comment '操作摘要，如 模型名称',
+    success     tinyint      not null default 1 comment '是否成功：1 成功 0 失败',
+    error_msg   varchar(512) null comment '失败原因',
+    create_time datetime     null comment '操作时间',
+    key idx_create_time (create_time),
+    key idx_user_id (user_id)
+) engine = innodb comment '操作日志表';
+
+-- ----------------------------
 -- 对话记录表（dashboard 统计数据来源）
 -- ----------------------------
 drop table if exists chat_record;

@@ -69,9 +69,10 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
         nav.addItem(item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY));
         nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
-        // 用户管理仅管理员可见
+        // 用户管理、操作日志仅管理员可见
         if (LoginHelper.isAdmin()) {
             nav.addItem(item("用户管理", UserView.class, VaadinIcon.USERS));
+            nav.addItem(item("操作日志", OperationLogView.class, VaadinIcon.CLIPBOARD_TEXT));
         }
         addToDrawer(nav);
 

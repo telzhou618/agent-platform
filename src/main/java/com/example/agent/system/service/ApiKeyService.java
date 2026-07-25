@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.entity.ApiKey;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.ApiKeyMapper;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class ApiKeyService extends ServiceImpl<ApiKeyMapper, ApiKey> {
     }
 
     /** 保存 ApiKey：新增时服务端生成 Key 值；编辑时 Key 值不可改，只更新名称/状态/备注 */
+    @OperationLog(module = "ApiKey管理", action = "保存", summary = "#apiKey.name")
     public void saveApiKey(ApiKey apiKey) {
         if (StrUtil.isBlank(apiKey.getName())) {
             throw new IllegalArgumentException("名称不能为空");
@@ -52,6 +54,7 @@ public class ApiKeyService extends ServiceImpl<ApiKeyMapper, ApiKey> {
     }
 
     /** 删除 ApiKey：非本人记录被租户拦截器挡下（影响 0 行），显式报错防止静默成功 */
+    @OperationLog(module = "ApiKey管理", action = "删除", summary = "#id")
     public void deleteApiKey(Long id) {
         if (!removeById(id)) {
             throw new IllegalStateException("ApiKey 不存在或无权删除");

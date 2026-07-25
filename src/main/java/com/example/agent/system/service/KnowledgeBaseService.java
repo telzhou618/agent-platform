@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.KnowledgeBase;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.KnowledgeBaseMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class KnowledgeBaseService extends ServiceImpl<KnowledgeBaseMapper, Knowl
     }
 
     /** 保存知识库（新增/编辑）：落库后级联重建引用它的智能体实例 */
+    @OperationLog(module = "知识库管理", action = "保存", summary = "#knowledgeBase.name")
     public void saveKnowledgeBase(KnowledgeBase knowledgeBase) {
         if (StrUtil.isBlank(knowledgeBase.getName())) {
             throw new IllegalArgumentException("名称不能为空");
@@ -37,6 +39,7 @@ public class KnowledgeBaseService extends ServiceImpl<KnowledgeBaseMapper, Knowl
     }
 
     /** 删除知识库：落库后级联重建引用它的智能体实例（移除该知识库） */
+    @OperationLog(module = "知识库管理", action = "删除", summary = "#id")
     public void deleteKnowledgeBase(Long id) {
         removeById(id);
         agentRegistry.onKnowledgeDeleted(id);

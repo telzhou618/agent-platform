@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.ModelConfig;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.ModelConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class ModelConfigService extends ServiceImpl<ModelConfigMapper, ModelConf
     }
 
     /** 保存模型：自定义供应商必须填写 API 地址；落库后级联重建引用它的智能体实例 */
+    @OperationLog(module = "模型管理", action = "保存", summary = "#model.name")
     public void saveModel(ModelConfig model) {
         if ("custom".equals(model.getProvider()) && StrUtil.isBlank(model.getBaseUrl())) {
             throw new IllegalArgumentException("自定义供应商必须填写 API 地址");
@@ -34,6 +36,7 @@ public class ModelConfigService extends ServiceImpl<ModelConfigMapper, ModelConf
     }
 
     /** 删除模型：落库后级联重建引用它的智能体实例（回退默认模型） */
+    @OperationLog(module = "模型管理", action = "删除", summary = "#id")
     public void deleteModel(Long id) {
         removeById(id);
         agentRegistry.onModelDeleted(id);

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.agent.McpClientFactory;
 import com.example.agent.system.entity.McpServer;
+import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.McpServerMapper;
 import io.modelcontextprotocol.spec.McpSchema;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class McpServerService extends ServiceImpl<McpServerMapper, McpServer> {
      * 保存 MCP 服务（新增/编辑）：先验证可连接，不可连接则报错放弃入库；
      * 落库后级联重建引用它的智能体实例。
      */
+    @OperationLog(module = "MCP服务管理", action = "保存", summary = "#server.name")
     public void saveMcpServer(McpServer server) {
         if (StrUtil.isBlank(server.getName())) {
             throw new IllegalArgumentException("名称不能为空");
@@ -49,6 +51,7 @@ public class McpServerService extends ServiceImpl<McpServerMapper, McpServer> {
     }
 
     /** 删除 MCP 服务：落库后级联重建引用它的智能体实例（移除该服务的工具） */
+    @OperationLog(module = "MCP服务管理", action = "删除", summary = "#id")
     public void deleteMcpServer(Long id) {
         removeById(id);
         agentRegistry.onMcpDeleted(id);
