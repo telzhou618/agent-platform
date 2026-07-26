@@ -2,11 +2,13 @@ package com.example.agent.config;
 
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.entity.SkillRepo;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.CustomToolService;
 import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
@@ -40,6 +42,7 @@ public class AgentBootstrap implements ApplicationRunner {
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
     private final SkillRepoService skillRepoService;
+    private final CustomToolService customToolService;
     private final AgentRegistry agentRegistry;
 
     @Override
@@ -53,13 +56,15 @@ public class AgentBootstrap implements ApplicationRunner {
                     .collect(Collectors.toMap(KnowledgeBase::getId, Function.identity()));
             Map<Long, SkillRepo> skillRepos = skillRepoService.list().stream()
                     .collect(Collectors.toMap(SkillRepo::getId, Function.identity()));
+            Map<Long, CustomTool> customTools = customToolService.list().stream()
+                    .collect(Collectors.toMap(CustomTool::getId, Function.identity()));
             List<AgentInfo> agents = agentInfoService.list();
             int ok = 0;
             for (AgentInfo agent : agents) {
                 try {
                     agentRegistry.register(agent, models.get(agent.getModelId()),
                             mcpServersOf(agent, mcpServers), knowledgeBasesOf(agent, knowledgeBases),
-                            skillReposOf(agent, skillRepos));
+                            skillReposOf(agent, skillRepos), customToolsOf(agent, customTools));
                     ok++;
                 } catch (Exception e) {
                     log.error("注册智能体「{}」失败：{}", agent.getName(), e.getMessage());
@@ -99,6 +104,17 @@ public class AgentBootstrap implements ApplicationRunner {
             return List.of();
         }
         return JSONUtil.toList(agent.getSkillRepos(), Long.class).stream()
+                .map(all::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /** 按 agent.customTools（JSON ID 数组）从全量 Map 中解析自定义工具列表 */
+    private List<CustomTool> customToolsOf(AgentInfo agent, Map<Long, CustomTool> all) {
+        if (StrUtil.isBlank(agent.getCustomTools())) {
+            return List.of();
+        }
+        return JSONUtil.toList(agent.getCustomTools(), Long.class).stream()
                 .map(all::get)
                 .filter(Objects::nonNull)
                 .toList();

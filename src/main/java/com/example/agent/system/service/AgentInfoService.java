@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.SkillRepo;
@@ -25,6 +26,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
     private final SkillRepoService skillRepoService;
+    private final CustomToolService customToolService;
 
     /** 分页查询智能体，关键字匹配名称 / 描述 */
     public Page<AgentInfo> pageAgents(String keyword, int page, int size) {
@@ -43,7 +45,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         saveOrUpdate(agent);
         agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
-                mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent));
+                mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent), customToolsOf(agent));
     }
 
     /** 删除智能体：落库后同步销毁容器中的实例 */
@@ -78,5 +80,14 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         List<Long> ids = JSONUtil.toList(agent.getSkillRepos(), Long.class);
         return ids.isEmpty() ? List.of() : skillRepoService.listByIds(ids);
+    }
+
+    /** 解析 agent.customTools（JSON ID 数组）-> 自定义工具实体列表 */
+    public List<CustomTool> customToolsOf(AgentInfo agent) {
+        if (StrUtil.isBlank(agent.getCustomTools())) {
+            return List.of();
+        }
+        List<Long> ids = JSONUtil.toList(agent.getCustomTools(), Long.class);
+        return ids.isEmpty() ? List.of() : customToolService.listByIds(ids);
     }
 }

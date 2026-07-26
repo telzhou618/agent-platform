@@ -6,11 +6,13 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.entity.SkillRepo;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.system.service.CustomToolService;
 import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
@@ -60,6 +62,7 @@ public class AgentView extends VerticalLayout {
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
     private final SkillRepoService skillRepoService;
+    private final CustomToolService customToolService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
@@ -78,13 +81,15 @@ public class AgentView extends VerticalLayout {
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
                      ToolService toolService, McpServerService mcpServerService,
-                     KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService) {
+                     KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
+                     CustomToolService customToolService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
         this.mcpServerService = mcpServerService;
         this.knowledgeBaseService = knowledgeBaseService;
         this.skillRepoService = skillRepoService;
+        this.customToolService = customToolService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -108,7 +113,7 @@ public class AgentView extends VerticalLayout {
         grid.addColumn(AgentInfo::getName).setHeader("名称");
         grid.addColumn(a -> modelName(a.getModelId())).setHeader("模型");
         grid.addColumn(a -> StrUtil.brief(StrUtil.nullToEmpty(a.getSysPrompt()), 30)).setHeader("系统提示词");
-        grid.addComponentColumn(a -> toolBadges(a.getTools())).setHeader("工具");
+        grid.addComponentColumn(a -> toolBadges(a.getTools())).setHeader("系统工具");
         grid.addColumn(a -> StrUtil.nullToEmpty(a.getDescription())).setHeader("描述");
         grid.addColumn(a -> DateUtil.format(a.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("创建时间");
         grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("240px").setFlexGrow(0);
@@ -191,9 +196,15 @@ public class AgentView extends VerticalLayout {
         sysPrompt.setMinHeight("8em");
         sysPrompt.setHelperText("保存后会自动追加默认要求：结构化方式输出、回答简洁明了");
 
-        MultiSelectComboBox<String> tools = new MultiSelectComboBox<>("工具");
+        MultiSelectComboBox<String> tools = new MultiSelectComboBox<>("系统工具");
         tools.setItems(toolService.listToolNames());
-        tools.setHelperText("可选工具来自「工具管理」中解析出的系统工具");
+        tools.setHelperText("可选工具来自「系统工具」中解析出的内置工具，所有人可见");
+
+        MultiSelectComboBox<CustomTool> customTools = new MultiSelectComboBox<>("自定义工具");
+        List<CustomTool> customToolList = customToolService.list();
+        customTools.setItems(customToolList);
+        customTools.setItemLabelGenerator(t -> t.getName() + "（" + t.getToolKey() + "）");
+        customTools.setHelperText("可选工具来自「自定义工具」（HTTP 远程接口），仅自己或管理员可见");
 
         MultiSelectComboBox<McpServer> mcpServers = new MultiSelectComboBox<>("MCP服务");
         List<McpServer> mcpList = mcpServerService.list();
@@ -242,6 +253,20 @@ public class AgentView extends VerticalLayout {
                         },
                         json -> StrUtil.isBlank(json) ? Set.of() : new LinkedHashSet<>(parseTools(json)))
                 .bind(AgentInfo::getTools, AgentInfo::setTools);
+        // 自定义工具多选 <-> JSON ID 数组字符串
+        Map<Long, CustomTool> customToolById = customToolList.stream()
+                .collect(Collectors.toMap(CustomTool::getId, Function.identity()));
+        binder.forField(customTools)
+                .withConverter(
+                        selected -> CollUtil.isEmpty(selected) ? null
+                                : JSONUtil.toJsonStr(selected.stream()
+                                .map(CustomTool::getId).sorted().toList()),
+                        json -> StrUtil.isBlank(json) ? Set.of()
+                                : JSONUtil.toList(json, Long.class).stream()
+                                .map(customToolById::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)))
+                .bind(AgentInfo::getCustomTools, AgentInfo::setCustomTools);
         // MCP 服务多选 <-> JSON ID 数组字符串
         Map<Long, McpServer> mcpById = mcpList.stream()
                 .collect(Collectors.toMap(McpServer::getId, Function.identity()));
@@ -291,11 +316,12 @@ public class AgentView extends VerticalLayout {
 
         binder.readBean(agent);
 
-        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers, knowledgeBases,
-                skillRepos);
+        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, customTools, mcpServers,
+                knowledgeBases, skillRepos);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(sysPrompt, 2);
         form.setColspan(tools, 2);
+        form.setColspan(customTools, 2);
         form.setColspan(mcpServers, 2);
         form.setColspan(knowledgeBases, 2);
         form.setColspan(skillRepos, 2);

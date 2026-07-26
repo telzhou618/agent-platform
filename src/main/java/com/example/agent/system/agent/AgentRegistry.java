@@ -3,6 +3,7 @@ package com.example.agent.system.agent;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
@@ -58,7 +59,8 @@ public class AgentRegistry {
 
     /** 注册智能体实例；已注册则先销毁重建（编辑场景） */
     public synchronized void register(AgentInfo agent, ModelConfig modelConfig, List<McpServer> mcpServers,
-                                      List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos) {
+                                      List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos,
+                                      List<CustomTool> customTools) {
         if (agent == null || agent.getId() == null) {
             return;
         }
@@ -66,12 +68,13 @@ public class AgentRegistry {
         List<McpClientWrapper> clients = new ArrayList<>();
         List<KnowledgeBase> kbs = knowledgeBases == null ? List.of() : knowledgeBases;
         List<SkillRepo> repos = skillRepos == null ? List.of() : skillRepos;
+        List<CustomTool> cts = customTools == null ? List.of() : customTools;
         beanFactory().registerSingleton(beanName(agent.getId()),
                 build(agent, modelFactory.fromConfig(modelConfig),
-                        mcpServers == null ? List.of() : mcpServers, kbs, repos, clients));
+                        mcpServers == null ? List.of() : mcpServers, kbs, repos, cts, clients));
         snapshots.put(agent.getId(),
                 new BuildSnapshot(agent, modelConfig, List.copyOf(mcpServers == null ? List.of() : mcpServers),
-                        List.copyOf(kbs), List.copyOf(repos)));
+                        List.copyOf(kbs), List.copyOf(repos), List.copyOf(cts)));
         mcpClients.put(agent.getId(), clients);
         log.info("注册智能体实例：{}（id={}）", agent.getName(), agent.getId());
     }
@@ -106,14 +109,16 @@ public class AgentRegistry {
     public synchronized void onModelChanged(ModelConfig fresh) {
         snapshots.values().stream()
                 .filter(s -> fresh.getId().equals(s.agent().getModelId()))
-                .forEach(s -> register(s.agent(), fresh, s.mcpServers(), s.knowledgeBases(), s.skillRepos()));
+                .forEach(s -> register(s.agent(), fresh, s.mcpServers(), s.knowledgeBases(), s.skillRepos(),
+                        s.customTools()));
     }
 
     /** 模型删除：引用它的智能体回退默认模型并重建 */
     public synchronized void onModelDeleted(Long modelId) {
         snapshots.values().stream()
                 .filter(s -> modelId.equals(s.agent().getModelId()))
-                .forEach(s -> register(s.agent(), null, s.mcpServers(), s.knowledgeBases(), s.skillRepos()));
+                .forEach(s -> register(s.agent(), null, s.mcpServers(), s.knowledgeBases(), s.skillRepos(),
+                        s.customTools()));
     }
 
     /** MCP 服务变更：重建引用它的全部智能体实例 */
@@ -122,7 +127,7 @@ public class AgentRegistry {
                 .filter(s -> references(s, fresh.getId()))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
                         .map(m -> fresh.getId().equals(m.getId()) ? fresh : m)
-                        .toList(), s.knowledgeBases(), s.skillRepos()));
+                        .toList(), s.knowledgeBases(), s.skillRepos(), s.customTools()));
     }
 
     /** MCP 服务删除：重建引用它的全部智能体实例（移除该服务的工具） */
@@ -131,7 +136,7 @@ public class AgentRegistry {
                 .filter(s -> references(s, mcpServerId))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers().stream()
                         .filter(m -> !mcpServerId.equals(m.getId()))
-                        .toList(), s.knowledgeBases(), s.skillRepos()));
+                        .toList(), s.knowledgeBases(), s.skillRepos(), s.customTools()));
     }
 
     /** 知识库变更：重建引用它的全部智能体实例 */
@@ -140,7 +145,7 @@ public class AgentRegistry {
                 .filter(s -> referencesKnowledge(s, fresh.getId()))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases().stream()
                         .map(k -> fresh.getId().equals(k.getId()) ? fresh : k)
-                        .toList(), s.skillRepos()));
+                        .toList(), s.skillRepos(), s.customTools()));
     }
 
     /** 知识库删除：重建引用它的全部智能体实例（移除该知识库） */
@@ -149,7 +154,7 @@ public class AgentRegistry {
                 .filter(s -> referencesKnowledge(s, knowledgeBaseId))
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases().stream()
                         .filter(k -> !knowledgeBaseId.equals(k.getId()))
-                        .toList(), s.skillRepos()));
+                        .toList(), s.skillRepos(), s.customTools()));
     }
 
     /** 技能仓库变更：重建引用它的全部智能体实例 */
@@ -159,7 +164,7 @@ public class AgentRegistry {
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases(),
                         s.skillRepos().stream()
                                 .map(r -> fresh.getId().equals(r.getId()) ? fresh : r)
-                                .toList()));
+                                .toList(), s.customTools()));
     }
 
     /** 技能仓库删除：重建引用它的全部智能体实例（移除该来源） */
@@ -169,6 +174,26 @@ public class AgentRegistry {
                 .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases(),
                         s.skillRepos().stream()
                                 .filter(r -> !skillRepoId.equals(r.getId()))
+                                .toList(), s.customTools()));
+    }
+
+    /** 自定义工具变更：重建引用它的全部智能体实例 */
+    public synchronized void onCustomToolChanged(CustomTool fresh) {
+        snapshots.values().stream()
+                .filter(s -> referencesCustomTool(s, fresh.getId()))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases(), s.skillRepos(),
+                        s.customTools().stream()
+                                .map(t -> fresh.getId().equals(t.getId()) ? fresh : t)
+                                .toList()));
+    }
+
+    /** 自定义工具删除：重建引用它的全部智能体实例（移除该工具） */
+    public synchronized void onCustomToolDeleted(Long customToolId) {
+        snapshots.values().stream()
+                .filter(s -> referencesCustomTool(s, customToolId))
+                .forEach(s -> register(s.agent(), s.model(), s.mcpServers(), s.knowledgeBases(), s.skillRepos(),
+                        s.customTools().stream()
+                                .filter(t -> !customToolId.equals(t.getId()))
                                 .toList()));
     }
 
@@ -184,6 +209,10 @@ public class AgentRegistry {
         return snapshot.skillRepos().stream().anyMatch(r -> skillRepoId.equals(r.getId()));
     }
 
+    private boolean referencesCustomTool(BuildSnapshot snapshot, Long customToolId) {
+        return snapshot.customTools().stream().anyMatch(t -> customToolId.equals(t.getId()));
+    }
+
     /**
      * 组装实例：系统提示词 + 模型 + 专属工具箱（配置的系统工具 + 各 MCP 服务的工具 + 知识库检索工具）
      * + 技能仓库（HarnessAgent 官方技能体系）。
@@ -194,7 +223,7 @@ public class AgentRegistry {
     @SuppressWarnings("deprecation")
     private HarnessAgent build(AgentInfo agent, Model model, List<McpServer> mcpServers,
                                List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos,
-                               List<McpClientWrapper> clientsOut) {
+                               List<CustomTool> customTools, List<McpClientWrapper> clientsOut) {
         Toolkit agentToolkit = new Toolkit();
         for (String toolName : parseToolNames(agent.getTools())) {
             AgentTool tool = toolkit.getTool(toolName);
@@ -202,6 +231,16 @@ public class AgentRegistry {
                 agentToolkit.registerAgentTool(tool);
             } else {
                 log.warn("智能体「{}」配置的工具 {} 不存在，已跳过", agent.getName(), toolName);
+            }
+        }
+        // 挂载自定义工具：HTTP 代理工具，单个失败只记日志跳过
+        for (CustomTool customTool : customTools) {
+            try {
+                agentToolkit.registerAgentTool(new CustomHttpTool(customTool));
+                log.info("智能体「{}」挂载自定义工具「{}」", agent.getName(), customTool.getToolKey());
+            } catch (Exception e) {
+                log.warn("智能体「{}」挂载自定义工具「{}」失败，已跳过：{}",
+                        agent.getName(), customTool.getToolKey(), e.getMessage());
             }
         }
         for (McpServer server : mcpServers) {
@@ -289,6 +328,7 @@ public class AgentRegistry {
 
     /** 一次构建的全部输入，级联重建时回放 */
     private record BuildSnapshot(AgentInfo agent, ModelConfig model, List<McpServer> mcpServers,
-                                 List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos) {
+                                 List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos,
+                                 List<CustomTool> customTools) {
     }
 }

@@ -16,9 +16,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-/** 工具管理：展示系统中 @Tool 注解解析出的工具列表，只读不落库 */
+/** 系统工具：展示系统中 @Tool 注解解析出的内置工具列表，只读不落库，所有人可见 */
 @Route(value = "tools", layout = MainLayout.class)
-@PageTitle("工具管理 - agent-platform")
+@PageTitle("系统工具 - agent-platform")
 public class ToolView extends VerticalLayout {
 
     private final ToolService toolService;
@@ -28,7 +28,7 @@ public class ToolView extends VerticalLayout {
         this.toolService = toolService;
         setSizeFull();
 
-        H2 title = new H2("工具管理");
+        H2 title = new H2("系统工具");
         title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
 
         Span hint = new Span("系统工具由 @Tool 注解自动解析，扩展新工具只需新增带注解的组件类");

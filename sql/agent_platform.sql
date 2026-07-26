@@ -56,6 +56,7 @@ create table agent_info (
     mcp_servers varchar(1024) null comment 'MCP 服务 ID 列表，JSON 数组',
     knowledge_bases varchar(1024) null comment '知识库 ID 列表，JSON 数组',
     skill_repos varchar(1024) null comment '技能仓库 ID 列表，JSON 数组',
+    custom_tools varchar(1024) null comment '自定义工具 ID 列表，JSON 数组',
     description varchar(256)  null comment '描述',
     user_id     bigint        null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime      null comment '创建时间',
@@ -119,6 +120,28 @@ create table skill_repo (
     deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
     key idx_user_id (user_id)
 ) engine = innodb comment '技能仓库表';
+
+-- ----------------------------
+-- 自定义工具表（HTTP 远程接口代理工具，用户级数据权限）
+-- ----------------------------
+drop table if exists custom_tool;
+create table custom_tool (
+    id           bigint auto_increment primary key,
+    tool_key     varchar(64)  not null comment '工具标识（唯一，小写字母/数字/下划线，模型调用名）',
+    name         varchar(64)  not null comment '工具名称（展示用）',
+    description  varchar(512) not null comment '工具描述（模型据此决定何时调用）',
+    url          varchar(512) not null comment '接口地址，支持 {参数名} 路径占位符',
+    method       varchar(8)   not null default 'GET' comment '请求方式：GET/POST/PUT/DELETE',
+    request_type varchar(16)  not null default 'json' comment '请求体类型（POST/PUT 时生效）：json/form',
+    headers      varchar(2048) null comment '请求头，JSON 对象 {key:value}',
+    params       text         null comment '参数定义，JSON 数组 [{name,type,description,required}]，type: string/number/boolean',
+    user_id      bigint       null comment '创建人（sys_user.id），管理员可看全部',
+    create_time  datetime     null comment '创建时间',
+    update_time  datetime     null comment '更新时间',
+    deleted      tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    unique key uk_tool_key (tool_key),
+    key idx_user_id (user_id)
+) engine = innodb comment '自定义工具表';
 
 -- ----------------------------
 -- ApiKey 表（将来用于访问智能体）

@@ -16,7 +16,8 @@ public class UserTenantHandler implements TenantLineHandler {
 
     /** 参与用户级数据权限的表 */
     private static final Set<String> TENANT_TABLES = Set.of(
-            "model_config", "agent_info", "mcp_server", "knowledge_base", "api_key", "skill_repo");
+            "model_config", "agent_info", "mcp_server", "knowledge_base", "api_key", "skill_repo",
+            "custom_tool");
 
     @Override
     public Expression getTenantId() {
