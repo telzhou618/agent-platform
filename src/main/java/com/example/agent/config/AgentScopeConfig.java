@@ -64,6 +64,11 @@ public class AgentScopeConfig {
                 .toolkit(new Toolkit())
                 .agentId("default")
                 .workspace("workspaces/default")
+                // 与 AgentRegistry 一致：关闭 Harness 默认子系统
+                .disableWorkspaceContext()
+                .disableMemoryHooks()
+                .disableSubagents()
+                .disableToolsConfig()
                 .build();
     }
 }

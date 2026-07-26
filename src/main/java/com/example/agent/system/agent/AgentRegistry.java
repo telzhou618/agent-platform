@@ -280,7 +280,13 @@ public class AgentRegistry {
                 .model(model)
                 .toolkit(agentToolkit)
                 .agentId("agent-" + agent.getId())
-                .workspace("workspaces/agent-" + agent.getId());
+                .workspace("workspaces/agent-" + agent.getId())
+                // 关闭 Harness 默认子系统：提示词/工具/技能由平台 DB 管理，
+                // 不注入工作区文件、不开长期记忆、不开子 agent、不读 tools.json
+                .disableWorkspaceContext()
+                .disableMemoryHooks()
+                .disableSubagents()
+                .disableToolsConfig();
         // 挂载技能仓库：单个构建失败只记日志跳过，不影响智能体注册
         for (SkillRepo repo : skillRepos) {
             try {
