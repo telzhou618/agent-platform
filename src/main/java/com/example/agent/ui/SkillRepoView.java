@@ -18,18 +18,22 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import io.agentscope.core.skill.AgentSkill;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Route(value = "skills", layout = MainLayout.class)
@@ -75,7 +79,7 @@ public class SkillRepoView extends VerticalLayout {
         grid.addComponentColumn(r -> typeBadge(r.getType())).setHeader("类型").setWidth("220px").setFlexGrow(0);
         grid.addColumn(r -> StrUtil.nullToEmpty(r.getRemark())).setHeader("备注");
         grid.addColumn(r -> DateUtil.format(r.getUpdateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("更新时间");
-        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("180px").setFlexGrow(0);
+        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("250px").setFlexGrow(0);
         grid.setSizeFull();
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
@@ -84,11 +88,13 @@ public class SkillRepoView extends VerticalLayout {
     }
 
     private Component actionButtons(SkillRepo repo) {
+        Button skills = new Button("技能", e -> openSkillsDialog(repo));
+        skills.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button edit = new Button("编辑", e -> openDialog(repo));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button("删除", e -> confirmDelete(repo));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        return new HorizontalLayout(edit, delete);
+        return new HorizontalLayout(skills, edit, delete);
     }
 
     /** 类型徽标 */
@@ -288,5 +294,211 @@ public class SkillRepoView extends VerticalLayout {
         dialog.setCancelable(true);
         dialog.setCancelText("取消");
         dialog.open();
+    }
+
+    // ---------- 仓库内技能管理 ----------
+
+    /**
+     * 技能管理弹窗：列出仓库内全部技能。
+     * git / classpath 仓库只读展示；mysql 仓库支持新增 / 编辑 / 删除。
+     */
+    private void openSkillsDialog(SkillRepo repo) {
+        boolean mysql = SkillRepo.TYPE_MYSQL.equals(repo.getType());
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("技能管理 - " + repo.getName() + (mysql ? "" : "（只读）"));
+        dialog.setWidth("760px");
+
+        Grid<AgentSkill> skillGrid = new Grid<>(AgentSkill.class, false);
+        Runnable reload = () -> {
+            try {
+                skillGrid.setItems(skillRepoService.listSkills(repo.getId()));
+            } catch (Exception ex) {
+                dialog.close();
+                Notify.error(ex.getMessage());
+            }
+        };
+
+        skillGrid.addColumn(AgentSkill::getName).setHeader("名称").setFlexGrow(2);
+        skillGrid.addColumn(AgentSkill::getDescription).setHeader("描述").setFlexGrow(4);
+        skillGrid.addColumn(s -> s.getResources().size() + " 个").setHeader("资源")
+                .setWidth("80px").setFlexGrow(0);
+        if (mysql) {
+            skillGrid.addComponentColumn(skill -> skillActionButtons(repo, skill, reload))
+                    .setHeader("操作").setWidth("170px").setFlexGrow(0);
+        }
+        skillGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
+        skillGrid.setHeight("420px");
+        reload.run();
+
+        VerticalLayout layout = new VerticalLayout(skillGrid);
+        layout.setPadding(false);
+        if (mysql) {
+            Button add = new Button("新增技能", new Icon(VaadinIcon.PLUS),
+                    e -> openSkillFormDialog(repo, null, reload));
+            add.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+            layout.addComponentAsFirst(add);
+            layout.setAlignSelf(Alignment.END, add);
+        }
+        dialog.add(layout);
+        dialog.open();
+    }
+
+    /** mysql 仓库的技能行操作：编辑 / 删除 */
+    private Component skillActionButtons(SkillRepo repo, AgentSkill skill, Runnable reload) {
+        Button edit = new Button("编辑", e -> openSkillFormDialog(repo, skill, reload));
+        edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        Button delete = new Button("删除", e -> {
+            ConfirmDialog confirm = new ConfirmDialog("删除技能",
+                    "确定删除技能「" + skill.getName() + "」吗？引用该仓库的智能体将同步移除该技能。",
+                    "删除", ev -> {
+                try {
+                    skillRepoService.deleteSkill(repo.getId(), skill.getName());
+                    reload.run();
+                    Notify.success("删除成功");
+                } catch (Exception ex) {
+                    Notify.error(ex.getMessage());
+                }
+            });
+            confirm.setConfirmButtonTheme("error primary");
+            confirm.setCancelable(true);
+            confirm.setCancelText("取消");
+            confirm.open();
+        });
+        delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        return new HorizontalLayout(edit, delete);
+    }
+
+    /**
+     * 技能编辑弹窗（仅 mysql 仓库）：名称 / 描述 / 技能内容 + 资源（路径 -> 内容）列表。
+     * 技能名是身份标识，编辑时不可改；资源行可动态增删。
+     */
+    private void openSkillFormDialog(SkillRepo repo, AgentSkill existing, Runnable reload) {
+        boolean isNew = existing == null;
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(isNew ? "新增技能" : "编辑技能 - " + existing.getName());
+        dialog.setWidth("680px");
+
+        TextField name = new TextField("名称");
+        name.setPlaceholder("如：pdf-tools");
+        name.setHelperText("技能唯一标识，不能包含 / \\ ..");
+        name.setMaxLength(255);
+        name.setRequiredIndicatorVisible(true);
+        name.setEnabled(isNew);
+
+        TextField description = new TextField("描述");
+        description.setPlaceholder("一句话说明技能的用途，agent 据此判断是否加载");
+        description.setRequiredIndicatorVisible(true);
+
+        TextArea content = new TextArea("技能内容");
+        content.setPlaceholder("Markdown 格式的技能指令（SKILL.md 正文）");
+        content.setWidthFull();
+        content.setHeight("220px");
+        content.setRequiredIndicatorVisible(true);
+
+        // 资源行：路径 + 内容，可动态增删
+        VerticalLayout resourceRows = new VerticalLayout();
+        resourceRows.setPadding(false);
+        resourceRows.setSpacing(false);
+        Button addResource = new Button("添加资源", new Icon(VaadinIcon.PLUS),
+                e -> resourceRows.add(resourceRow(resourceRows, "", "")));
+        addResource.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+
+        if (!isNew) {
+            name.setValue(existing.getName());
+            description.setValue(existing.getDescription());
+            content.setValue(existing.getSkillContent());
+            existing.getResources().forEach((path, text) ->
+                    resourceRows.add(resourceRow(resourceRows, path, text)));
+        }
+
+        FormLayout form = new FormLayout(name, description);
+        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
+        form.setColspan(description, 2);
+        H3 resourceTitle = new H3("资源文件");
+        resourceTitle.getStyle().set("margin", "var(--lumo-space-s) 0 0 0")
+                .set("font-size", "var(--lumo-font-size-m)");
+        VerticalLayout layout = new VerticalLayout(form, content, resourceTitle, resourceRows, addResource);
+        layout.setPadding(false);
+        dialog.add(layout);
+
+        Button cancel = new Button("取消", e -> dialog.close());
+        Button save = new Button("保存", e -> {
+            AgentSkill skill = buildSkill(name, description, content, resourceRows);
+            if (skill == null) {
+                return;
+            }
+            try {
+                skillRepoService.saveSkill(repo.getId(), skill);
+                dialog.close();
+                reload.run();
+                Notify.success("保存成功");
+            } catch (Exception ex) {
+                Notify.error(ex.getMessage());
+            }
+        });
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getFooter().add(cancel, save);
+        dialog.open();
+    }
+
+    /** 一行资源编辑：路径输入 + 内容输入 + 删除按钮 */
+    private Component resourceRow(VerticalLayout container, String path, String text) {
+        TextField pathField = new TextField();
+        pathField.setPlaceholder("资源路径，如 scripts/run.py");
+        pathField.setWidth("240px");
+        pathField.setValue(path);
+        TextArea contentField = new TextArea();
+        contentField.setPlaceholder("资源内容");
+        contentField.setHeight("72px");
+        contentField.setWidthFull();
+        contentField.setValue(text);
+        HorizontalLayout row = new HorizontalLayout();
+        Button remove = new Button(new Icon(VaadinIcon.CLOSE_SMALL), e -> container.remove(row));
+        remove.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        row.add(pathField, contentField, remove);
+        row.setWidthFull();
+        row.expand(contentField);
+        row.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+        return row;
+    }
+
+    /**
+     * 校验并组装 AgentSkill；失败提示后返回 null。
+     * 规则与 MysqlSkillRepository 一致：名称非空且不含路径分隔符，资源路径非空且不重复。
+     */
+    private AgentSkill buildSkill(TextField name, TextField description, TextArea content,
+                                  VerticalLayout resourceRows) {
+        if (StrUtil.isBlank(name.getValue())) {
+            Notify.error("技能名称不能为空");
+            return null;
+        }
+        String skillName = name.getValue().trim();
+        if (skillName.contains("..") || skillName.contains("/") || skillName.contains("\\")) {
+            Notify.error("技能名称不能包含 / \\ ..");
+            return null;
+        }
+        if (StrUtil.isBlank(description.getValue())) {
+            Notify.error("技能描述不能为空");
+            return null;
+        }
+        if (StrUtil.isBlank(content.getValue())) {
+            Notify.error("技能内容不能为空");
+            return null;
+        }
+        Map<String, String> resources = new LinkedHashMap<>();
+        for (Component row : resourceRows.getChildren().toList()) {
+            TextField pathField = (TextField) ((HorizontalLayout) row).getComponentAt(0);
+            TextArea contentField = (TextArea) ((HorizontalLayout) row).getComponentAt(1);
+            String path = StrUtil.trimToEmpty(pathField.getValue());
+            if (path.isEmpty()) {
+                Notify.error("资源路径不能为空");
+                return null;
+            }
+            if (resources.put(path, contentField.getValue()) != null) {
+                Notify.error("资源路径重复：" + path);
+                return null;
+            }
+        }
+        return new AgentSkill(skillName, description.getValue().trim(), content.getValue(), resources);
     }
 }
