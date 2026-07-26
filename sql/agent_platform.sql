@@ -53,6 +53,7 @@ create table agent_info (
     tools       varchar(1024) null comment '工具名称列表，JSON 数组',
     mcp_servers varchar(1024) null comment 'MCP 服务 ID 列表，JSON 数组',
     knowledge_bases varchar(1024) null comment '知识库 ID 列表，JSON 数组',
+    skill_repos varchar(1024) null comment '技能仓库 ID 列表，JSON 数组',
     description varchar(256)  null comment '描述',
     user_id     bigint        null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime      null comment '创建时间',
@@ -99,6 +100,23 @@ create table knowledge_base (
     deleted         tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
     key idx_user_id (user_id)
 ) engine = innodb comment '知识库表';
+
+-- ----------------------------
+-- 技能仓库表（HarnessAgent 技能来源，类型可扩展）
+-- ----------------------------
+drop table if exists skill_repo;
+create table skill_repo (
+    id          bigint auto_increment primary key,
+    name        varchar(128) not null comment '技能仓库名称',
+    type        varchar(32)  not null comment '来源类型：git/mysql/classpath，未来可扩展',
+    config      text         null comment '类型相关配置，JSON 对象',
+    remark      varchar(512) null comment '备注',
+    user_id     bigint       null comment '创建人（sys_user.id），管理员可看全部',
+    create_time datetime     null comment '创建时间',
+    update_time datetime     null comment '更新时间',
+    deleted     tinyint      not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_user_id (user_id)
+) engine = innodb comment '技能仓库表';
 
 -- ----------------------------
 -- ApiKey 表（将来用于访问智能体）

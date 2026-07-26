@@ -2,19 +2,19 @@ package com.example.agent.config;
 
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.service.ToolService;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
 import io.agentscope.core.tool.Toolkit;
 import io.agentscope.extensions.model.dashscope.DashScopeChatModel;
 import io.agentscope.extensions.model.dashscope.formatter.DashScopeChatFormatter;
+import io.agentscope.harness.agent.HarnessAgent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * AgentScope 全局配置：默认模型 + 全局工具箱 + 全局默认智能体（兜底）。
- * 各智能体的 ReActAgent 实例由 AgentRegistry 按 agent_info 配置动态注册。
+ * 各智能体的 HarnessAgent 实例由 AgentRegistry 按 agent_info 配置动态注册。
  */
 @Slf4j
 @Configuration
@@ -43,7 +43,7 @@ public class AgentScopeConfig {
     }
 
     /**
-     * 全局工具箱：启动时即扫描注册全部系统工具（必须在 ReActAgent 创建前完成）。
+     * 全局工具箱：启动时即扫描注册全部系统工具（必须在 HarnessAgent 创建前完成）。
      * 各智能体的专属工具箱从这里取 AgentTool 实例组装。
      */
     @Bean
@@ -55,13 +55,15 @@ public class AgentScopeConfig {
      * 全局默认智能体：未选择智能体或实例未注册时的兜底，使用默认模型、不暴露工具。
      */
     @Bean
-    public ReActAgent defaultAgent(Model defaultModel) {
-        return ReActAgent.builder()
+    public HarnessAgent defaultAgent(Model defaultModel) {
+        return HarnessAgent.builder()
                 .name("agent-platform")
                 .description("agent-platform 默认智能体")
                 .sysPrompt("你是 agent-platform 的智能助手。")
                 .model(defaultModel)
                 .toolkit(new Toolkit())
+                .agentId("default")
+                .workspace("workspaces/default")
                 .build();
     }
 }

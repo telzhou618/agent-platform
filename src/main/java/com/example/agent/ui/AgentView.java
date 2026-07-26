@@ -9,10 +9,12 @@ import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
+import com.example.agent.system.entity.SkillRepo;
 import com.example.agent.system.service.AgentInfoService;
 import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
+import com.example.agent.system.service.SkillRepoService;
 import com.example.agent.system.service.ToolService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
@@ -57,6 +59,7 @@ public class AgentView extends VerticalLayout {
     private final ToolService toolService;
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final SkillRepoService skillRepoService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
@@ -75,12 +78,13 @@ public class AgentView extends VerticalLayout {
 
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
                      ToolService toolService, McpServerService mcpServerService,
-                     KnowledgeBaseService knowledgeBaseService) {
+                     KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
         this.mcpServerService = mcpServerService;
         this.knowledgeBaseService = knowledgeBaseService;
+        this.skillRepoService = skillRepoService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -204,6 +208,12 @@ public class AgentView extends VerticalLayout {
                 + KNOWLEDGE_TYPES.getOrDefault(k.getType(), StrUtil.nullToEmpty(k.getType())) + "）");
         knowledgeBases.setHelperText("可选知识库来自「知识库管理」，保存后自动挂载检索能力");
 
+        MultiSelectComboBox<SkillRepo> skillRepos = new MultiSelectComboBox<>("技能仓库");
+        List<SkillRepo> repoList = skillRepoService.list();
+        skillRepos.setItems(repoList);
+        skillRepos.setItemLabelGenerator(SkillRepo::getName);
+        skillRepos.setHelperText("可选技能仓库来自「技能管理」，保存后自动接入仓库中的技能");
+
         TextField description = new TextField("描述");
         description.setMaxLength(256);
 
@@ -260,6 +270,20 @@ public class AgentView extends VerticalLayout {
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .bind(AgentInfo::getKnowledgeBases, AgentInfo::setKnowledgeBases);
+        // 技能仓库多选 <-> JSON ID 数组字符串
+        Map<Long, SkillRepo> repoById = repoList.stream()
+                .collect(Collectors.toMap(SkillRepo::getId, Function.identity()));
+        binder.forField(skillRepos)
+                .withConverter(
+                        selected -> CollUtil.isEmpty(selected) ? null
+                                : JSONUtil.toJsonStr(selected.stream()
+                                .map(SkillRepo::getId).sorted().toList()),
+                        json -> StrUtil.isBlank(json) ? Set.of()
+                                : JSONUtil.toList(json, Long.class).stream()
+                                .map(repoById::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)))
+                .bind(AgentInfo::getSkillRepos, AgentInfo::setSkillRepos);
         binder.bind(description, AgentInfo::getDescription, AgentInfo::setDescription);
 
         name.setRequiredIndicatorVisible(true);
@@ -267,12 +291,14 @@ public class AgentView extends VerticalLayout {
 
         binder.readBean(agent);
 
-        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers, knowledgeBases);
+        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, mcpServers, knowledgeBases,
+                skillRepos);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(sysPrompt, 2);
         form.setColspan(tools, 2);
         form.setColspan(mcpServers, 2);
         form.setColspan(knowledgeBases, 2);
+        form.setColspan(skillRepos, 2);
         dialog.add(form);
 
         Button cancel = new Button("取消", e -> dialog.close());

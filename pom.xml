@@ -69,6 +69,23 @@
             <artifactId>agentscope-extensions-model-anthropic</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
+        <!-- AgentScope Harness：HarnessAgent（技能/工作区体系） -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-harness</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <!-- AgentScope 技能仓库扩展：Git / MySQL 来源（Classpath 在 core 中） -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-skill-git-repository</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-skill-mysql-repository</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
         <!-- AgentScope RAG 扩展：阿里云百炼 / Dify 知识库检索 -->
         <dependency>
             <groupId>io.agentscope</groupId>

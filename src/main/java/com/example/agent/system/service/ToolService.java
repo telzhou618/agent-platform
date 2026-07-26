@@ -34,8 +34,8 @@ public class ToolService {
 
     /**
      * 构建全局工具箱：扫描并注册全部系统工具。
-     * 由 AgentScopeConfig#toolkit 调用，必须在 ReActAgent 创建前完成——
-     * ReActAgent 构建时即固化工具箱快照，之后注册的工具不会生效。
+     * 由 AgentScopeConfig#toolkit 调用，必须在 HarnessAgent 创建前完成——
+     * HarnessAgent 构建时即固化工具箱快照，之后注册的工具不会生效。
      * 工具一律不分组（ungrouped）：AgentScope 每次对话会用会话状态覆盖工具箱的激活组，
      * 分组工具对新会话不可见，而不分组工具始终对模型可见（再由 DynamicAgentMiddleware 按智能体配置过滤）。
      */

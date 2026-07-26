@@ -5,10 +5,12 @@ import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
+import com.example.agent.system.entity.SkillRepo;
 import com.example.agent.system.service.AgentInfoService;
 import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
+import com.example.agent.system.service.SkillRepoService;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * 启动注册：项目启动时把 agent_info 表中的全部智能体注册为 Spring 容器中的
- * ReActAgent 实例（系统提示词、模型、工具在注册时固化）。
+ * HarnessAgent 实例（系统提示词、模型、工具、知识库、技能仓库在注册时固化）。
  * 单个注册失败不影响其它实例；数据库不可用时整体跳过，默认智能体仍可兜底对话。
  */
 @Slf4j
@@ -37,6 +39,7 @@ public class AgentBootstrap implements ApplicationRunner {
     private final ModelConfigService modelConfigService;
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final SkillRepoService skillRepoService;
     private final AgentRegistry agentRegistry;
 
     @Override
@@ -48,12 +51,15 @@ public class AgentBootstrap implements ApplicationRunner {
                     .collect(Collectors.toMap(McpServer::getId, Function.identity()));
             Map<Long, KnowledgeBase> knowledgeBases = knowledgeBaseService.list().stream()
                     .collect(Collectors.toMap(KnowledgeBase::getId, Function.identity()));
+            Map<Long, SkillRepo> skillRepos = skillRepoService.list().stream()
+                    .collect(Collectors.toMap(SkillRepo::getId, Function.identity()));
             List<AgentInfo> agents = agentInfoService.list();
             int ok = 0;
             for (AgentInfo agent : agents) {
                 try {
                     agentRegistry.register(agent, models.get(agent.getModelId()),
-                            mcpServersOf(agent, mcpServers), knowledgeBasesOf(agent, knowledgeBases));
+                            mcpServersOf(agent, mcpServers), knowledgeBasesOf(agent, knowledgeBases),
+                            skillReposOf(agent, skillRepos));
                     ok++;
                 } catch (Exception e) {
                     log.error("注册智能体「{}」失败：{}", agent.getName(), e.getMessage());
@@ -82,6 +88,17 @@ public class AgentBootstrap implements ApplicationRunner {
             return List.of();
         }
         return JSONUtil.toList(agent.getKnowledgeBases(), Long.class).stream()
+                .map(all::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /** 按 agent.skillRepos（JSON ID 数组）从全量 Map 中解析技能仓库列表 */
+    private List<SkillRepo> skillReposOf(AgentInfo agent, Map<Long, SkillRepo> all) {
+        if (StrUtil.isBlank(agent.getSkillRepos())) {
+            return List.of();
+        }
+        return JSONUtil.toList(agent.getSkillRepos(), Long.class).stream()
                 .map(all::get)
                 .filter(Objects::nonNull)
                 .toList();

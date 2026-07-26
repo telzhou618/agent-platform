@@ -8,6 +8,7 @@ import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
+import com.example.agent.system.entity.SkillRepo;
 import com.example.agent.system.log.OperationLog;
 import com.example.agent.system.mapper.AgentInfoMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     private final ModelConfigService modelConfigService;
     private final McpServerService mcpServerService;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final SkillRepoService skillRepoService;
 
     /** 分页查询智能体，关键字匹配名称 / 描述 */
     public Page<AgentInfo> pageAgents(String keyword, int page, int size) {
@@ -41,7 +43,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         saveOrUpdate(agent);
         agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
-                mcpServersOf(agent), knowledgeBasesOf(agent));
+                mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent));
     }
 
     /** 删除智能体：落库后同步销毁容器中的实例 */
@@ -67,5 +69,14 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         }
         List<Long> ids = JSONUtil.toList(agent.getKnowledgeBases(), Long.class);
         return ids.isEmpty() ? List.of() : knowledgeBaseService.listByIds(ids);
+    }
+
+    /** 解析 agent.skillRepos（JSON ID 数组）-> 技能仓库实体列表 */
+    public List<SkillRepo> skillReposOf(AgentInfo agent) {
+        if (StrUtil.isBlank(agent.getSkillRepos())) {
+            return List.of();
+        }
+        List<Long> ids = JSONUtil.toList(agent.getSkillRepos(), Long.class);
+        return ids.isEmpty() ? List.of() : skillRepoService.listByIds(ids);
     }
 }

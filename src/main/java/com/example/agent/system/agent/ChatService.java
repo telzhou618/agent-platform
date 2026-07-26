@@ -3,7 +3,6 @@ package com.example.agent.system.agent;
 import cn.hutool.core.util.IdUtil;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.service.ChatRecordService;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.event.TextBlockDeltaEvent;
@@ -15,6 +14,7 @@ import io.agentscope.core.event.ToolResultTextDeltaEvent;
 import io.agentscope.core.message.UserMessage;
 import io.agentscope.core.permission.PermissionMode;
 import io.agentscope.core.tool.mcp.McpMeta;
+import io.agentscope.harness.agent.HarnessAgent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 对话服务：按 agentId 从 Spring 容器取对应的 ReActAgent 实例进行对话，
- * 实例的系统提示词、模型、工具在注册时已固化（见 AgentRegistry）；
+ * 对话服务：按 agentId 从 Spring 容器取对应的 HarnessAgent 实例进行对话，
+ * 实例的系统提示词、模型、工具、知识库、技能仓库在注册时已固化（见 AgentRegistry）；
  * 取不到实例时回退全局默认智能体。
  * 会话历史由 AgentScope 按 (userId, sessionId) 自动维护，换新 sessionId 即新开会话。
  */
@@ -37,7 +37,7 @@ public class ChatService {
     /** 无登录上下文（如单元测试）时的兜底用户 ID */
     private static final String FALLBACK_USER_ID = "default";
 
-    private final ReActAgent defaultAgent;
+    private final HarnessAgent defaultAgent;
     private final AgentRegistry agentRegistry;
     private final ChatRecordService chatRecordService;
 
@@ -54,7 +54,7 @@ public class ChatService {
 
     /** 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息 */
     public Flux<ChatChunk> streamChat(String sessionId, Long agentId, String text) {
-        ReActAgent agent = agentId == null ? null : agentRegistry.find(agentId);
+        HarnessAgent agent = agentId == null ? null : agentRegistry.find(agentId);
         if (agent == null) {
             agent = defaultAgent;
         }

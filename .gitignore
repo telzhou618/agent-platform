@@ -18,3 +18,9 @@ node_modules/
 src/main/frontend/generated/
 src/main/frontend/index.html
 vite.generated.ts
+
+# HarnessAgent 工作区（运行期文件：技能缓存、会话日志等）
+workspaces/
+
+# 本地测试数据（git 技能仓库等）
+testdata/

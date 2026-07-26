@@ -30,6 +30,9 @@ public class AgentInfo extends BaseEntity {
     /** 知识库 ID 列表，JSON 数组 */
     private String knowledgeBases;
 
+    /** 技能仓库 ID 列表，JSON 数组 */
+    private String skillRepos;
+
     /** 描述 */
     private String description;
 

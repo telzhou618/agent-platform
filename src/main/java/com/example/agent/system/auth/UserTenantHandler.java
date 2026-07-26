@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * 用户级数据权限：四张业务表自动按 user_id 过滤，
+ * 用户级数据权限：业务表自动按 user_id 过滤，
  * 普通用户只能读写自己创建的数据；管理员与无登录上下文（启动引导 / 异步线程）放行。
  */
 @Component
@@ -16,7 +16,7 @@ public class UserTenantHandler implements TenantLineHandler {
 
     /** 参与用户级数据权限的表 */
     private static final Set<String> TENANT_TABLES = Set.of(
-            "model_config", "agent_info", "mcp_server", "knowledge_base", "api_key");
+            "model_config", "agent_info", "mcp_server", "knowledge_base", "api_key", "skill_repo");
 
     @Override
     public Expression getTenantId() {
