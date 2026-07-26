@@ -223,7 +223,7 @@ public class AgentView extends VerticalLayout {
         List<SkillRepo> repoList = skillRepoService.list();
         skillRepos.setItems(repoList);
         skillRepos.setItemLabelGenerator(SkillRepo::getName);
-        skillRepos.setHelperText("可选技能仓库来自「技能管理」，保存后自动接入仓库中的技能");
+        skillRepos.setHelperText("可选技能仓库来自「技能仓库管理」，保存后自动接入仓库中的技能");
 
         TextField description = new TextField("描述");
         description.setMaxLength(256);

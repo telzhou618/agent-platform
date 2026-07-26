@@ -65,7 +65,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
         nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
-        nav.addItem(item("技能管理", SkillRepoView.class, VaadinIcon.LIGHTBULB));
+        nav.addItem(item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB));
         nav.addItem(item("系统工具", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("自定义工具", CustomToolView.class, VaadinIcon.EXTERNAL_LINK));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));

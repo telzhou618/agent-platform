@@ -37,7 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Route(value = "skills", layout = MainLayout.class)
-@PageTitle("技能管理 - agent-platform")
+@PageTitle("技能仓库管理 - agent-platform")
 public class SkillRepoView extends VerticalLayout {
 
     /**
@@ -57,7 +57,7 @@ public class SkillRepoView extends VerticalLayout {
         this.skillRepoService = skillRepoService;
         setSizeFull();
 
-        H2 title = new H2("技能管理");
+        H2 title = new H2("技能仓库管理");
         title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
 
         keyword.setPlaceholder("名称 / 备注");

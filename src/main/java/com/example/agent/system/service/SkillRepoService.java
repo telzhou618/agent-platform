@@ -32,7 +32,7 @@ public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
     }
 
     /** 保存技能仓库（新增/编辑）：落库后级联重建引用它的智能体实例 */
-    @OperationLog(module = "技能管理", action = "保存", summary = "#skillRepo.name")
+    @OperationLog(module = "技能仓库管理", action = "保存", summary = "#skillRepo.name")
     public void saveSkillRepo(SkillRepo skillRepo) {
         if (StrUtil.isBlank(skillRepo.getName())) {
             throw new IllegalArgumentException("名称不能为空");
@@ -45,7 +45,7 @@ public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
     }
 
     /** 删除技能仓库：落库后级联重建引用它的智能体实例（移除该来源） */
-    @OperationLog(module = "技能管理", action = "删除", summary = "#id")
+    @OperationLog(module = "技能仓库管理", action = "删除", summary = "#id")
     public void deleteSkillRepo(Long id) {
         removeById(id);
         agentRegistry.onSkillRepoDeleted(id);
@@ -63,7 +63,7 @@ public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
     }
 
     /** 保存技能（新增/编辑，同名覆盖）：仅 mysql 类型支持；落库后级联重建引用该仓库的智能体 */
-    @OperationLog(module = "技能管理", action = "保存技能", summary = "#skill.name")
+    @OperationLog(module = "技能仓库管理", action = "保存技能", summary = "#skill.name")
     public void saveSkill(Long repoId, AgentSkill skill) {
         SkillRepo repo = requireMysqlRepo(repoId);
         boolean ok;
@@ -79,7 +79,7 @@ public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
     }
 
     /** 删除技能：仅 mysql 类型支持；落库后级联重建引用该仓库的智能体 */
-    @OperationLog(module = "技能管理", action = "删除技能", summary = "#skillName")
+    @OperationLog(module = "技能仓库管理", action = "删除技能", summary = "#skillName")
     public void deleteSkill(Long repoId, String skillName) {
         SkillRepo repo = requireMysqlRepo(repoId);
         boolean ok;
