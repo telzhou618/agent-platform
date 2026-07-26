@@ -29,10 +29,12 @@ drop table if exists model_config;
 create table model_config (
     id          bigint auto_increment primary key,
     name        varchar(64)  not null comment '模型名称（展示用）',
-    provider    varchar(32)  not null comment '供应商：dashscope/openai/anthropic/custom 自定义',
+    provider    varchar(32)  not null comment '供应商：dashscope/kimi/deepseek/glm/minimax/openai/anthropic/custom 自定义',
     model       varchar(128) not null comment '模型标识，如 qwen-plus、gpt-4o、claude-sonnet-4',
     base_url    varchar(256) null comment 'API 地址，自定义供应商时必填',
     api_key     varchar(256) null comment 'API Key',
+    available   tinyint      not null default 0 comment '可用状态（保存时真实调用验证）：1 可用 0 不可用',
+    check_msg   varchar(512) null comment '最近一次的不可用原因',
     remark      varchar(256) null comment '备注',
     user_id     bigint       null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime     null comment '创建时间',

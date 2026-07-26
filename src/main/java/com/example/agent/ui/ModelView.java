@@ -29,6 +29,7 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Route(value = "models", layout = MainLayout.class)
@@ -36,11 +37,16 @@ import java.util.Map;
 public class ModelView extends VerticalLayout {
 
     /** 供应商 -> 展示名 */
-    private static final Map<String, String> PROVIDERS = Map.of(
-            "dashscope", "DashScope（阿里云）",
-            "openai", "OpenAI",
-            "anthropic", "Anthropic",
-            "custom", "自定义");
+    private static final Map<String, String> PROVIDERS = new LinkedHashMap<>() {{
+        put("dashscope", "DashScope（阿里云）");
+        put("kimi", "月之暗面（Kimi）");
+        put("deepseek", "深度求索（DeepSeek）");
+        put("glm", "智谱AI（GLM）");
+        put("minimax", "MiniMax");
+        put("openai", "OpenAI");
+        put("anthropic", "Anthropic");
+        put("custom", "自定义（OpenAI 兼容）");
+    }};
 
     private final ModelConfigService modelService;
     private final Grid<ModelConfig> grid = new Grid<>(ModelConfig.class, false);
@@ -74,9 +80,10 @@ public class ModelView extends VerticalLayout {
         grid.addColumn(ModelConfig::getModel).setHeader("模型标识");
         grid.addColumn(m -> StrUtil.nullToEmpty(m.getBaseUrl())).setHeader("API 地址");
         grid.addColumn(m -> maskKey(m.getApiKey())).setHeader("API Key").setWidth("140px").setFlexGrow(0);
+        grid.addComponentColumn(this::availableBadge).setHeader("可用状态").setWidth("100px").setFlexGrow(0);
         grid.addColumn(m -> StrUtil.nullToEmpty(m.getRemark())).setHeader("备注");
         grid.addColumn(m -> DateUtil.format(m.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("创建时间");
-        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("180px").setFlexGrow(0);
+        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("250px").setFlexGrow(0);
         grid.setSizeFull();
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
@@ -85,11 +92,37 @@ public class ModelView extends VerticalLayout {
     }
 
     private Component actionButtons(ModelConfig model) {
+        Button recheck = new Button("检测", e -> recheck(model));
+        recheck.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button edit = new Button("编辑", e -> openDialog(model));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button("删除", e -> confirmDelete(model));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        return new HorizontalLayout(edit, delete);
+        return new HorizontalLayout(recheck, edit, delete);
+    }
+
+    /** 可用状态徽标：不可用悬浮显示原因；从未验证（保存于该功能上线前）显示未验证 */
+    private Component availableBadge(ModelConfig model) {
+        boolean ok = model.getAvailable() != null && model.getAvailable() == 1;
+        boolean neverChecked = (model.getAvailable() == null || model.getAvailable() == 0)
+                && StrUtil.isBlank(model.getCheckMsg());
+        Span badge = new Span(ok ? "可用" : neverChecked ? "未验证" : "不可用");
+        badge.getElement().getThemeList().add(ok ? "badge success" : neverChecked ? "badge contrast" : "badge error");
+        if (!ok && StrUtil.isNotBlank(model.getCheckMsg())) {
+            badge.setTitle(model.getCheckMsg());
+        }
+        return badge;
+    }
+
+    /** 重新检测可用性：真实调用一次模型，结果无论成败都会更新状态 */
+    private void recheck(ModelConfig model) {
+        try {
+            modelService.recheckModel(model.getId());
+            Notify.success("模型「" + model.getName() + "」可用");
+        } catch (Exception ex) {
+            Notify.error(ex.getMessage());
+        }
+        refresh();
     }
 
     /** 供应商徽标 */
@@ -98,6 +131,7 @@ public class ModelView extends VerticalLayout {
         Span badge = new Span(label);
         String theme = switch (StrUtil.nullToEmpty(provider)) {
             case "dashscope" -> "badge success";
+            case "kimi", "deepseek", "glm", "minimax" -> "badge success primary";
             case "openai" -> "badge";
             case "anthropic" -> "badge contrast";
             default -> "badge error";
@@ -138,11 +172,12 @@ public class ModelView extends VerticalLayout {
         provider.setItems(PROVIDERS.keySet());
         provider.setItemLabelGenerator(PROVIDERS::get);
         TextField modelName = new TextField("模型标识");
-        modelName.setHelperText("如 qwen-plus、gpt-4o、claude-sonnet-4");
+        modelName.setHelperText("如 qwen-plus、kimi-k2、deepseek-chat、glm-4、gpt-4o、claude-sonnet-4");
         modelName.setMaxLength(128);
         TextField baseUrl = new TextField("API 地址");
         baseUrl.setPlaceholder("https://api.example.com/v1");
         baseUrl.setMaxLength(256);
+        baseUrl.setHelperText("仅自定义供应商需要填写，其他供应商使用官方固定端点");
         PasswordField apiKey = new PasswordField("API Key");
         apiKey.setPlaceholder("sk-...");
         apiKey.setMaxLength(256);
@@ -173,7 +208,12 @@ public class ModelView extends VerticalLayout {
         provider.setRequiredIndicatorVisible(true);
         modelName.setRequiredIndicatorVisible(true);
 
+        // 仅自定义供应商展示 API 地址；其他供应商走官方固定端点
+        provider.addValueChangeListener(e -> baseUrl.setVisible("custom".equals(e.getValue())));
+
         binder.readBean(model);
+        // readBean 不触发 ValueChange（初始同值时），显式同步一次显隐
+        baseUrl.setVisible("custom".equals(provider.getValue()));
 
         FormLayout form = new FormLayout(name, provider, modelName, baseUrl, apiKey, remark);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
@@ -183,6 +223,10 @@ public class ModelView extends VerticalLayout {
         Button save = new Button("保存", e -> {
             if (!binder.writeBeanIfValid(model)) {
                 return;
+            }
+            // 非自定义供应商不落 API 地址，统一走官方固定端点
+            if (!"custom".equals(model.getProvider())) {
+                model.setBaseUrl(null);
             }
             try {
                 modelService.saveModel(model);
