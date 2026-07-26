@@ -64,6 +64,15 @@ public class ModelConfigService extends ServiceImpl<ModelConfigMapper, ModelConf
         }
     }
 
+    /**
+     * 模型可用状态统计：[可用数, 不可用数]（available 非 1 的一律按不可用计，含历史未检测数据）。
+     * 数据权限由租户插件自动过滤：普通用户只统计自己创建的模型。
+     */
+    public long[] availabilitySummary() {
+        long available = lambdaQuery().eq(ModelConfig::getAvailable, 1).count();
+        return new long[]{available, count() - available};
+    }
+
     /** 删除模型：落库后级联重建引用它的智能体实例（回退默认模型） */
     @OperationLog(module = "模型管理", action = "删除", summary = "#id")
     public void deleteModel(Long id) {

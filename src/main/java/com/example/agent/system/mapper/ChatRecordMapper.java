@@ -2,6 +2,7 @@ package com.example.agent.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.agent.system.dto.AgentActivityStat;
+import com.example.agent.system.dto.ChatOverviewStat;
 import com.example.agent.system.dto.DailyCount;
 import com.example.agent.system.entity.ChatRecord;
 import org.apache.ibatis.annotations.Param;
@@ -54,4 +55,23 @@ public interface ChatRecordMapper extends BaseMapper<ChatRecord> {
             </script>
             """)
     List<DailyCount> dailyCounts(@Param("since") LocalDateTime since, @Param("userId") Long userId);
+
+    /**
+     * 对话数据概览：累计 / 今日轮数、会话数、工具调用、平均耗时、成功率。
+     * userId 不为 null 时只统计该用户名下智能体的记录（管理员传 null 看全部）。
+     */
+    @Select("""
+            <script>
+            select count(*)                        as totalCount,
+                   sum(case when r.create_time &gt;= #{todayStart} then 1 else 0 end) as todayCount,
+                   count(distinct r.session_id)     as sessionCount,
+                   coalesce(sum(r.tool_calls), 0)   as toolCallCount,
+                   coalesce(round(avg(r.duration_ms)), 0) as avgDurationMs,
+                   round(coalesce(sum(r.success), 0) * 100 / count(*)) as successRate
+            from chat_record r
+            <if test="userId != null"> join agent_info a on a.id = r.agent_id and a.user_id = #{userId} </if>
+            where r.deleted = 0
+            </script>
+            """)
+    ChatOverviewStat overview(@Param("todayStart") LocalDateTime todayStart, @Param("userId") Long userId);
 }

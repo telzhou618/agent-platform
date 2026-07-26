@@ -3,6 +3,7 @@ package com.example.agent.system.service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.dto.AgentActivityStat;
+import com.example.agent.system.dto.ChatOverviewStat;
 import com.example.agent.system.dto.DailyCount;
 import com.example.agent.system.entity.ChatRecord;
 import com.example.agent.system.mapper.ChatRecordMapper;
@@ -62,6 +63,12 @@ public class ChatRecordService extends ServiceImpl<ChatRecordMapper, ChatRecord>
                 .mapToObj(since::plusDays)
                 .map(date -> byDate.getOrDefault(date, new DailyCount(date, 0L)))
                 .toList();
+    }
+
+    /** 对话数据概览（累计 / 今日 / 会话 / 工具调用 / 平均耗时 / 成功率），普通用户只看自己智能体的数据 */
+    public ChatOverviewStat overview() {
+        ChatOverviewStat stat = baseMapper.overview(LocalDate.now().atStartOfDay(), scopeUserId());
+        return stat != null ? stat : new ChatOverviewStat();
     }
 
     /** 统计数据权限范围：管理员看全部（null 不过滤），普通用户只统计自己名下的智能体 */
