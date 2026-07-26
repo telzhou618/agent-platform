@@ -153,10 +153,8 @@ public class CustomToolView extends VerticalLayout {
         requestType.setItems(REQUEST_TYPES.keySet());
         requestType.setItemLabelGenerator(REQUEST_TYPES::get);
         requestType.setHelperText("仅 POST/PUT 时生效");
-        TextArea headers = new TextArea("请求头");
-        headers.setPlaceholder("{\"Authorization\":\"Bearer xxx\"}");
-        headers.setHelperText("JSON 对象，选填");
-        headers.setMaxHeight("5em");
+        // 请求头键值对编辑器（与 MCP 服务一致）
+        HeadersEditor headersEditor = new HeadersEditor(tool.getHeaders());
 
         // 请求类型仅 POST/PUT 时展示
         method.addValueChangeListener(e ->
@@ -186,7 +184,6 @@ public class CustomToolView extends VerticalLayout {
                 .withValidator(FormValidators.url())
                 .bind(CustomTool::getUrl, CustomTool::setUrl);
         binder.forField(method).asRequired("请选择请求方式").bind(CustomTool::getMethod, CustomTool::setMethod);
-        binder.bind(headers, CustomTool::getHeaders, CustomTool::setHeaders);
 
         toolKey.setRequiredIndicatorVisible(true);
         name.setRequiredIndicatorVisible(true);
@@ -207,12 +204,11 @@ public class CustomToolView extends VerticalLayout {
             paramsList.add(paramRow(param, paramsList));
         }
 
-        FormLayout form = new FormLayout(toolKey, name, url, method, requestType, headers, description);
+        FormLayout form = new FormLayout(toolKey, name, url, method, requestType, description);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(url, 2);
-        form.setColspan(headers, 2);
         form.setColspan(description, 2);
-        VerticalLayout layout = new VerticalLayout(form, paramsTitle, paramsList, addParam);
+        VerticalLayout layout = new VerticalLayout(form, headersEditor, paramsTitle, paramsList, addParam);
         layout.setPadding(false);
         dialog.add(layout);
 
@@ -227,10 +223,7 @@ public class CustomToolView extends VerticalLayout {
             }
             tool.setParams(params);
             tool.setRequestType(requestType.getValue());
-            if (StrUtil.isNotBlank(tool.getHeaders()) && !JSONUtil.isTypeJSON(tool.getHeaders())) {
-                Notify.error("请求头应为 JSON 对象格式");
-                return;
-            }
+            tool.setHeaders(headersEditor.toJson());
             try {
                 customToolService.saveCustomTool(tool);
                 dialog.close();
@@ -333,5 +326,92 @@ public class CustomToolView extends VerticalLayout {
         dialog.setCancelable(true);
         dialog.setCancelText("取消");
         dialog.open();
+    }
+
+    /**
+     * 请求头键值对编辑器（与 MCP 服务一致）：首行默认 key 为 Authorization，可增删多行；
+     * toJson() 汇总为 JSON 对象字符串（跳过空 key 行）。
+     */
+    private static class HeadersEditor extends VerticalLayout {
+
+        private final VerticalLayout rows = new VerticalLayout();
+
+        HeadersEditor(String headersJson) {
+            setPadding(false);
+            setSpacing(false);
+            getStyle().set("gap", "var(--lumo-space-xs)");
+            Span label = new Span("请求头");
+            label.getStyle().set("font-size", "var(--lumo-font-size-s)")
+                    .set("color", "var(--lumo-secondary-text-color)");
+            rows.setPadding(false);
+            rows.setSpacing(false);
+            rows.getStyle().set("gap", "var(--lumo-space-xs)");
+            Button addRow = new Button("添加请求头", new Icon(VaadinIcon.PLUS),
+                    e -> addRow("", ""));
+            addRow.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+            add(label, rows, addRow);
+
+            Map<String, String> initial = parse(headersJson);
+            if (initial.isEmpty()) {
+                addRow("Authorization", "");
+            } else {
+                initial.forEach(this::addRow);
+            }
+        }
+
+        /** 汇总为 JSON 对象字符串；无有效行时返回 null */
+        String toJson() {
+            Map<String, String> map = new LinkedHashMap<>();
+            for (Component row : rows.getChildren().toList()) {
+                HeaderRow headerRow = (HeaderRow) row;
+                if (StrUtil.isNotBlank(headerRow.key.getValue())) {
+                    map.put(headerRow.key.getValue().trim(), headerRow.value.getValue());
+                }
+            }
+            return map.isEmpty() ? null : JSONUtil.toJsonStr(map);
+        }
+
+        private void addRow(String key, String value) {
+            HeaderRow[] holder = new HeaderRow[1];
+            HeaderRow row = new HeaderRow(key, value, () -> rows.remove(holder[0]));
+            holder[0] = row;
+            rows.add(row);
+        }
+
+        private static Map<String, String> parse(String headersJson) {
+            if (StrUtil.isBlank(headersJson)) {
+                return Map.of();
+            }
+            Map<String, String> map = new LinkedHashMap<>();
+            JSONObject obj = JSONUtil.parseObj(headersJson);
+            for (String key : obj.keySet()) {
+                map.put(key, obj.getStr(key));
+            }
+            return map;
+        }
+
+        private static class HeaderRow extends HorizontalLayout {
+            private final TextField key;
+            private final TextField value;
+
+            HeaderRow(String k, String v, Runnable onRemove) {
+                key = new TextField();
+                key.setPlaceholder("Key");
+                key.setValue(k);
+                key.setWidth("220px");
+                value = new TextField();
+                value.setPlaceholder("Value");
+                value.setValue(StrUtil.nullToEmpty(v));
+                value.setWidthFull();
+                Button remove = new Button(new Icon(VaadinIcon.CLOSE_SMALL), e -> onRemove.run());
+                remove.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY,
+                        ButtonVariant.LUMO_ERROR);
+                setWidthFull();
+                setPadding(false);
+                setDefaultVerticalComponentAlignment(Alignment.CENTER);
+                expand(value);
+                add(key, value, remove);
+            }
+        }
     }
 }
