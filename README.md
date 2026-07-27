@@ -34,10 +34,11 @@
 
 ## 快速开始
 
-1. **初始化数据库**：本机安装 MySQL 8，执行脚本（会创建 `agent_platform` 库并写入种子数据）：
+1. **初始化数据库**：本机安装 MySQL 8，依次执行两个脚本（建库建表 + 写入种子数据）：
 
    ```bash
-   mysql -uroot -p < sql/agent_platform.sql
+   mysql -uroot -p < sql/agent_platform_schema.sql   # 建库建表（会 drop 重建整个库）
+   mysql -uroot -p < sql/agent_platform_data.sql     # 种子/测试数据（仅限全新库）
    ```
 
 2. **修改数据源**：编辑 `src/main/resources/application.yml` 中的 `spring.datasource` 用户名和密码。
@@ -60,7 +61,8 @@ java -jar target/agent-platform-1.0.0.jar
 ## 目录结构
 
 ```
-├── sql/agent_platform.sql      # 建库建表 + 种子数据
+├── sql/agent_platform_schema.sql # 建库建表
+├── sql/agent_platform_data.sql   # 种子/测试数据（schema 之后执行）
 └── src/main/
     ├── java/com/example/agent/
     │   ├── config/             # MyBatis-Plus 分页、字段自动填充

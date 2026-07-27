@@ -50,25 +50,4 @@ public class AgentScopeConfig {
     public Toolkit toolkit(ToolService toolService) {
         return toolService.buildToolkit();
     }
-
-    /**
-     * 全局默认智能体：未选择智能体或实例未注册时的兜底，使用默认模型、不暴露工具。
-     */
-    @Bean
-    public HarnessAgent defaultAgent(Model defaultModel) {
-        return HarnessAgent.builder()
-                .name("agent-platform")
-                .description("agent-platform 默认智能体")
-                .sysPrompt("你是 agent-platform 的智能助手。")
-                .model(defaultModel)
-                .toolkit(new Toolkit())
-                .agentId("default")
-                .workspace("workspaces/default")
-                // 与 AgentRegistry 一致：关闭 Harness 默认子系统
-                .disableWorkspaceContext()
-                .disableMemoryHooks()
-                .disableSubagents()
-                .disableToolsConfig()
-                .build();
-    }
 }

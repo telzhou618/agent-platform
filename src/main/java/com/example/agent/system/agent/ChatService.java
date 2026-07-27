@@ -1,6 +1,8 @@
 package com.example.agent.system.agent;
 
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.service.ChatRecordService;
 import io.agentscope.core.agent.RuntimeContext;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,31 +37,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class ChatService {
 
-    /** 无登录上下文（如单元测试）时的兜底用户 ID */
+    /**
+     * 无登录上下文（如单元测试）时的兜底用户 ID
+     */
     private static final String FALLBACK_USER_ID = "default";
-
-    private final HarnessAgent defaultAgent;
     private final AgentRegistry agentRegistry;
     private final ChatRecordService chatRecordService;
 
-    /** 生成新会话 ID */
+    /**
+     * 生成新会话 ID
+     */
     public String newSessionId() {
         return IdUtil.simpleUUID();
     }
 
-    /** 当前登录用户 ID（字符串形式），无登录上下文时回退 default */
+    /**
+     * 当前登录用户 ID（字符串形式），无登录上下文时回退 default
+     */
     private static String currentUserId() {
         Long id = LoginHelper.currentUserId();
         return id == null ? FALLBACK_USER_ID : String.valueOf(id);
     }
 
-    /** 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息 */
+    /**
+     * 流式对话：返回 {@link ChatChunk} 流，包含回复文本、思考过程和工具调用的增量信息
+     */
     public Flux<ChatChunk> streamChat(String sessionId, Long agentId, String text) {
         HarnessAgent agent = agentId == null ? null : agentRegistry.find(agentId);
         if (agent == null) {
-            agent = defaultAgent;
+            Map<String, Object> map = Map.of("text", "您访问的智能体不存在",
+                    "agentId", agentId == null ? 0 : agentId,
+                    "sessionId", sessionId
+            );
+            return Flux.just(ChatChunk.of(ChatChunk.Kind.TEXT, JSONUtil.toJsonStr(map)));
         }
-
         // mcp 元数据, 会自动传递给下游的 MCP 服务
         McpMeta meta = new McpMeta(Map.of(
                 "userId", currentUserId(),
@@ -84,7 +96,9 @@ public class ChatService {
         return record(sessionId, agentId, chunks);
     }
 
-    /** 埋点：统计工具调用次数和耗时，流结束时异步落一条对话记录 */
+    /**
+     * 埋点：统计工具调用次数和耗时，流结束时异步落一条对话记录
+     */
     private Flux<ChatChunk> record(String sessionId, Long agentId, Flux<ChatChunk> chunks) {
         long startMillis = System.currentTimeMillis();
         AtomicInteger toolCalls = new AtomicInteger();
@@ -100,7 +114,9 @@ public class ChatService {
                         System.currentTimeMillis() - startMillis, !failed.get()));
     }
 
-    /** AgentScope 事件 -> 对话输出单元；不关心的事件返回 null（被过滤掉） */
+    /**
+     * AgentScope 事件 -> 对话输出单元；不关心的事件返回 null（被过滤掉）
+     */
     private ChatChunk toChunk(AgentEvent e) {
         if (e instanceof TextBlockDeltaEvent t) {
             return ChatChunk.of(ChatChunk.Kind.TEXT, t.getDelta());
