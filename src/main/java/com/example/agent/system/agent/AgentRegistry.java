@@ -286,7 +286,11 @@ public class AgentRegistry {
                 .disableWorkspaceContext()
                 .disableMemoryHooks()
                 .disableSubagents()
-                .disableToolsConfig();
+                .disableDefaultWorkspaceSkills()
+                .disableToolsConfig()
+                .disableMemoryTools()
+                .disableFilesystemTools()
+                .disableShellTool();
         // 挂载技能仓库：单个构建失败只记日志跳过，不影响智能体注册
         for (SkillRepo repo : skillRepos) {
             try {
