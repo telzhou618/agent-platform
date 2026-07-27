@@ -38,19 +38,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** 自定义工具：HTTP 远程接口代理工具的 CRUD，用户级数据权限（自己或管理员可见） */
+/**
+ * 自定义工具：HTTP 远程接口代理工具的 CRUD，用户级数据权限（自己或管理员可见）
+ */
 @Route(value = "custom-tools", layout = MainLayout.class)
 @PageTitle("自定义工具 - agent-platform")
 public class CustomToolView extends VerticalLayout {
 
-    /** 请求方式 */
+    /**
+     * 请求方式
+     */
     private static final List<String> METHODS = List.of("GET", "POST", "PUT", "DELETE");
-    /** 请求体类型 -> 展示名 */
+    /**
+     * 请求体类型 -> 展示名
+     */
     private static final Map<String, String> REQUEST_TYPES = new LinkedHashMap<>() {{
         put("json", "JSON（application/json）");
         put("form", "表单（x-www-form-urlencoded）");
     }};
-    /** 参数类型 */
+    /**
+     * 参数类型
+     */
     private static final List<String> PARAM_TYPES = List.of("string", "number", "boolean");
 
     private final CustomToolService customToolService;
@@ -102,7 +110,9 @@ public class CustomToolView extends VerticalLayout {
         return new HorizontalLayout(edit, delete);
     }
 
-    /** 请求方式徽标 */
+    /**
+     * 请求方式徽标
+     */
     private Component methodBadge(String method) {
         Span badge = new Span(StrUtil.nullToEmpty(method));
         badge.getElement().getThemeList().add(
@@ -218,12 +228,11 @@ public class CustomToolView extends VerticalLayout {
                 return;
             }
             String params = buildParamsJson(paramsList);
-            if (params == null) {
-                return;
-            }
-            tool.setParams(params);
+            String headers = headersEditor.toJson();
+
+            tool.setParams(params == null ? "[]" : params);
             tool.setRequestType(requestType.getValue());
-            tool.setHeaders(headersEditor.toJson());
+            tool.setHeaders(headers == null ? "{}" : headers);
             try {
                 customToolService.saveCustomTool(tool);
                 dialog.close();
@@ -238,7 +247,9 @@ public class CustomToolView extends VerticalLayout {
         dialog.open();
     }
 
-    /** 一行参数编辑器：名称 + 类型 + 必填 + 描述 + 删除 */
+    /**
+     * 一行参数编辑器：名称 + 类型 + 必填 + 描述 + 删除
+     */
     private HorizontalLayout paramRow(JSONObject param, VerticalLayout paramsList) {
         TextField paramName = new TextField();
         paramName.setPlaceholder("参数名");
@@ -267,7 +278,9 @@ public class CustomToolView extends VerticalLayout {
         return row;
     }
 
-    /** 解析参数 JSON 数组为对象列表；非法时返回空 */
+    /**
+     * 解析参数 JSON 数组为对象列表；非法时返回空
+     */
     private List<JSONObject> parseParams(String paramsJson) {
         if (StrUtil.isBlank(paramsJson) || !JSONUtil.isTypeJSON(paramsJson)) {
             return List.of();
@@ -280,7 +293,9 @@ public class CustomToolView extends VerticalLayout {
         return result;
     }
 
-    /** 收集参数行组装 JSON 数组；存在空参数名或重复名时提示并返回 null */
+    /**
+     * 收集参数行组装 JSON 数组；存在空参数名或重复名时提示并返回 null
+     */
     @SuppressWarnings("unchecked")
     private String buildParamsJson(VerticalLayout paramsList) {
         JSONArray params = JSONUtil.createArray();
@@ -352,14 +367,12 @@ public class CustomToolView extends VerticalLayout {
             add(label, rows, addRow);
 
             Map<String, String> initial = parse(headersJson);
-            if (initial.isEmpty()) {
-                addRow("Authorization", "");
-            } else {
-                initial.forEach(this::addRow);
-            }
+            initial.forEach(this::addRow);
         }
 
-        /** 汇总为 JSON 对象字符串；无有效行时返回 null */
+        /**
+         * 汇总为 JSON 对象字符串；无有效行时返回 null
+         */
         String toJson() {
             Map<String, String> map = new LinkedHashMap<>();
             for (Component row : rows.getChildren().toList()) {
