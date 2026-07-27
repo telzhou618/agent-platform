@@ -28,7 +28,9 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     private final SkillRepoService skillRepoService;
     private final CustomToolService customToolService;
 
-    /** 分页查询智能体，关键字匹配名称 / 描述 */
+    /**
+     * 分页查询智能体，关键字匹配名称 / 描述
+     */
     public Page<AgentInfo> pageAgents(String keyword, int page, int size) {
         return lambdaQuery()
                 .and(StrUtil.isNotBlank(keyword), q -> q
@@ -37,25 +39,39 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
                 .page(new Page<>(page, size));
     }
 
-    /** 保存智能体（新增/编辑）：落库后同步注册/重建容器中的实例 */
+    /**
+     * 保存智能体（新增/编辑）：落库后同步注册/重建容器中的实例
+     */
     @OperationLog(module = "智能体管理", action = "保存", summary = "#agent.name")
     public void saveAgent(AgentInfo agent) {
         if (agent.getModelId() == null) {
             throw new IllegalArgumentException("请选择模型");
         }
+
+        // 可清除置信息
+        agent.setTools(agent.getTools() == null ? "[]" : agent.getTools());
+        agent.setCustomTools(agent.getCustomTools() == null ? "[]" : agent.getCustomTools());
+        agent.setMcpServers(agent.getMcpServers() == null ? "[]" : agent.getMcpServers());
+        agent.setKnowledgeBases(agent.getKnowledgeBases() == null ? "[]" : agent.getKnowledgeBases());
+        agent.setSkillRepos(agent.getSkillRepos() == null ? "[]" : agent.getSkillRepos());
+
         saveOrUpdate(agent);
         agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
                 mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent), customToolsOf(agent));
     }
 
-    /** 删除智能体：落库后同步销毁容器中的实例 */
+    /**
+     * 删除智能体：落库后同步销毁容器中的实例
+     */
     @OperationLog(module = "智能体管理", action = "删除", summary = "#id")
     public void deleteAgent(Long id) {
         removeById(id);
         agentRegistry.unregister(id);
     }
 
-    /** 解析 agent.mcpServers（JSON ID 数组）-> MCP 服务实体列表 */
+    /**
+     * 解析 agent.mcpServers（JSON ID 数组）-> MCP 服务实体列表
+     */
     public List<McpServer> mcpServersOf(AgentInfo agent) {
         if (StrUtil.isBlank(agent.getMcpServers())) {
             return List.of();
@@ -64,7 +80,9 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         return ids.isEmpty() ? List.of() : mcpServerService.listByIds(ids);
     }
 
-    /** 解析 agent.knowledgeBases（JSON ID 数组）-> 知识库实体列表 */
+    /**
+     * 解析 agent.knowledgeBases（JSON ID 数组）-> 知识库实体列表
+     */
     public List<KnowledgeBase> knowledgeBasesOf(AgentInfo agent) {
         if (StrUtil.isBlank(agent.getKnowledgeBases())) {
             return List.of();
@@ -73,7 +91,9 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         return ids.isEmpty() ? List.of() : knowledgeBaseService.listByIds(ids);
     }
 
-    /** 解析 agent.skillRepos（JSON ID 数组）-> 技能仓库实体列表 */
+    /**
+     * 解析 agent.skillRepos（JSON ID 数组）-> 技能仓库实体列表
+     */
     public List<SkillRepo> skillReposOf(AgentInfo agent) {
         if (StrUtil.isBlank(agent.getSkillRepos())) {
             return List.of();
@@ -82,7 +102,9 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         return ids.isEmpty() ? List.of() : skillRepoService.listByIds(ids);
     }
 
-    /** 解析 agent.customTools（JSON ID 数组）-> 自定义工具实体列表 */
+    /**
+     * 解析 agent.customTools（JSON ID 数组）-> 自定义工具实体列表
+     */
     public List<CustomTool> customToolsOf(AgentInfo agent) {
         if (StrUtil.isBlank(agent.getCustomTools())) {
             return List.of();
