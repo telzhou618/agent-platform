@@ -19,11 +19,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ModelAvailabilityChecker {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private final ModelFactory modelFactory;
 
-    /** 验证模型可用性；不可用抛 IllegalArgumentException（消息含原因，可直接展示给用户） */
+    /**
+     * 验证模型可用性；不可用抛 IllegalArgumentException（消息含原因，可直接展示给用户）
+     */
     public void check(ModelConfig config) {
         Model model = modelFactory.buildStrict(config);
         try {
@@ -35,7 +37,9 @@ public class ModelAvailabilityChecker {
         }
     }
 
-    /** 取异常链最底层的原因信息，去掉堆栈噪音；reactor 超时转成人话 */
+    /**
+     * 取异常链最底层的原因信息，去掉堆栈噪音；reactor 超时转成人话
+     */
     private String rootMessage(Throwable e) {
         Throwable cause = e;
         while (cause.getCause() != null && cause.getCause() != cause) {
