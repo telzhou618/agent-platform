@@ -82,10 +82,7 @@ public class HomeView extends VerticalLayout {
         Span date = span(LocalDate.now().format(DATE_FORMAT), "home-date");
         Div titleRow = new Div(title, date);
         titleRow.addClassName("home-title-row");
-
-        Paragraph intro = new Paragraph("基于 AgentScope + Spring Boot + Vaadin 的综合性 Agent 管理平台。");
-        intro.addClassName("home-intro");
-        Div header = new Div(titleRow, intro);
+        Div header = new Div(titleRow);
         header.addClassName("home-header");
         return header;
     }
@@ -166,7 +163,9 @@ public class HomeView extends VerticalLayout {
         return panel;
     }
 
-    /** 概览条上的单个指标：大数值 + 小标签；extraClass 用于成功率按区间着色 */
+    /**
+     * 概览条上的单个指标：大数值 + 小标签；extraClass 用于成功率按区间着色
+     */
     private Div miniStat(String label, String value, String... extraClass) {
         Div number = new Div();
         number.setText(value);
@@ -184,7 +183,9 @@ public class HomeView extends VerticalLayout {
         return item;
     }
 
-    /** 成功率配色：>=90 绿，>=70 橙，其余红 */
+    /**
+     * 成功率配色：>=90 绿，>=70 橙，其余红
+     */
     private static String rateClass(long rate) {
         if (rate >= 90) {
             return "overview-value-good";
@@ -349,7 +350,9 @@ public class HomeView extends VerticalLayout {
         return panel;
     }
 
-    /** 快捷入口按钮：图标 + 文字，整块可点击 */
+    /**
+     * 快捷入口按钮：图标 + 文字，整块可点击
+     */
     private Div linkButton(String label, VaadinIcon vaadinIcon, String route) {
         Icon icon = vaadinIcon.create();
         icon.addClassName("quick-link-icon");

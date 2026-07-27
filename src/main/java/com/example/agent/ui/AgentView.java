@@ -80,14 +80,6 @@ public class AgentView extends VerticalLayout {
      */
     private Map<Long, ModelConfig> modelMap = Map.of();
 
-    /**
-     * 各类关联资源 ID -> 名称，供 Grid 徽标列展示
-     */
-    private Map<Long, String> customToolNames = Map.of();
-    private Map<Long, String> mcpNames = Map.of();
-    private Map<Long, String> kbNames = Map.of();
-    private Map<Long, String> repoNames = Map.of();
-
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
                      ToolService toolService, McpServerService mcpServerService,
                      KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
@@ -123,11 +115,11 @@ public class AgentView extends VerticalLayout {
         grid.addComponentColumn(this::statusBadge).setHeader("状态").setWidth("90px").setFlexGrow(0);
         grid.addColumn(a -> modelName(a.getModelId())).setHeader("模型");
         grid.addColumn(a -> StrUtil.brief(StrUtil.nullToEmpty(a.getSysPrompt()), 30)).setHeader("系统提示词");
-        grid.addComponentColumn(a -> badges(parseTools(a.getTools()))).setHeader("系统工具");
-        grid.addComponentColumn(a -> badges(idNames(a.getCustomTools(), customToolNames))).setHeader("自定义工具");
-        grid.addComponentColumn(a -> badges(idNames(a.getMcpServers(), mcpNames))).setHeader("MCP服务");
-        grid.addComponentColumn(a -> badges(idNames(a.getKnowledgeBases(), kbNames))).setHeader("知识库");
-        grid.addComponentColumn(a -> badges(idNames(a.getSkillRepos(), repoNames))).setHeader("技能仓库");
+        grid.addColumn(a -> parseTools(a.getTools()).size()).setHeader("系统工具").setWidth("90px").setFlexGrow(0);
+        grid.addColumn(a -> idCount(a.getCustomTools())).setHeader("自定义工具").setWidth("90px").setFlexGrow(0);
+        grid.addColumn(a -> idCount(a.getMcpServers())).setHeader("MCP服务").setWidth("90px").setFlexGrow(0);
+        grid.addColumn(a -> idCount(a.getKnowledgeBases())).setHeader("知识库").setWidth("90px").setFlexGrow(0);
+        grid.addColumn(a -> idCount(a.getSkillRepos())).setHeader("技能仓库").setWidth("90px").setFlexGrow(0);
         grid.addColumn(a -> StrUtil.nullToEmpty(a.getDescription())).setHeader("描述");
         grid.addColumn(a -> DateUtil.format(a.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("创建时间");
         grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("300px").setFlexGrow(0);
@@ -173,31 +165,13 @@ public class AgentView extends VerticalLayout {
     }
 
     /**
-     * 名称列表渲染为徽标组
+     * JSON ID 数组字符串 -> 数量（列表页只展示数量，不解析名称）
      */
-    private Component badges(List<String> names) {
-        HorizontalLayout badges = new HorizontalLayout();
-        badges.setSpacing(false);
-        badges.getStyle().set("gap", "var(--lumo-space-xs)");
-        for (String name : names) {
-            Span badge = new Span(name);
-            badge.getElement().getThemeList().add("badge");
-            badges.add(badge);
-        }
-        return badges;
-    }
-
-    /**
-     * JSON ID 数组字符串 -> 关联资源名称列表（ID 已删除的名称跳过）
-     */
-    private List<String> idNames(String json, Map<Long, String> nameMap) {
+    private int idCount(String json) {
         if (StrUtil.isBlank(json)) {
-            return List.of();
+            return 0;
         }
-        return JSONUtil.toList(json, Long.class).stream()
-                .map(nameMap::get)
-                .filter(Objects::nonNull)
-                .toList();
+        return JSONUtil.toList(json, Long.class).size();
     }
 
     private String modelName(Long modelId) {
@@ -222,14 +196,6 @@ public class AgentView extends VerticalLayout {
     private void loadPage(int page, int pageSize) {
         modelMap = modelService.list().stream()
                 .collect(Collectors.toMap(ModelConfig::getId, Function.identity()));
-        customToolNames = customToolService.list().stream()
-                .collect(Collectors.toMap(CustomTool::getId, CustomTool::getName));
-        mcpNames = mcpServerService.list().stream()
-                .collect(Collectors.toMap(McpServer::getId, McpServer::getName));
-        kbNames = knowledgeBaseService.list().stream()
-                .collect(Collectors.toMap(KnowledgeBase::getId, KnowledgeBase::getName));
-        repoNames = skillRepoService.list().stream()
-                .collect(Collectors.toMap(SkillRepo::getId, SkillRepo::getName));
         Page<AgentInfo> result = agentService.pageAgents(keyword.getValue(), page, pageSize);
         grid.setItems(result.getRecords());
         paginationBar.setTotal(result.getTotal());
