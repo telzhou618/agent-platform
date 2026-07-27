@@ -239,7 +239,7 @@ public class AgentView extends VerticalLayout {
         boolean isNew = agent.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增智能体" : "编辑智能体");
-        dialog.setWidth("640px");
+        dialog.setWidth("840px");
 
         TextField name = new TextField("名称");
         name.setPlaceholder("如：天气小助手");
