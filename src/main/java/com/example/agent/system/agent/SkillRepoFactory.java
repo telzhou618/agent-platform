@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.nio.file.Path;
 
 /**
  * 按技能仓库配置（skill_repo 表）构建 AgentScope AgentSkillRepository。
@@ -22,10 +23,14 @@ import javax.sql.DataSource;
 @RequiredArgsConstructor
 public class SkillRepoFactory {
 
-    /** mysql 类型直接使用平台自己的数据源 */
+    /**
+     * mysql 类型直接使用平台自己的数据源
+     */
     private final DataSource dataSource;
 
-    /** 按类型构建技能仓库实例；类型未知或必填配置缺失时抛异常 */
+    /**
+     * 按类型构建技能仓库实例；类型未知或必填配置缺失时抛异常
+     */
     public AgentSkillRepository fromConfig(SkillRepo repo) throws Exception {
         JSONObject config = StrUtil.isBlank(repo.getConfig())
                 ? new JSONObject() : JSONUtil.parseObj(repo.getConfig());
@@ -37,14 +42,24 @@ public class SkillRepoFactory {
         };
     }
 
-    /** Git：url 必填；autoSync 选填（默认 true，HEAD 变化才 pull） */
+    /**
+     * Git：url 必填；autoSync 选填（默认 true，HEAD 变化才 pull）；
+     * localPath 选填（持久克隆目录，多次读取复用、close 不删目录）；
+     * 留空则每次克隆到临时目录，close 时清理（Windows 上 JGit 占用 pack 文件时清理可能失败）
+     */
     private AgentSkillRepository buildGit(JSONObject config) {
         String url = required(config, "url");
         boolean autoSync = config.getBool("autoSync", true);
-        return new GitSkillRepository(url, autoSync);
+        String localPath = config.getStr("localPath");
+        if (StrUtil.isBlank(localPath)) {
+            return new GitSkillRepository(url, autoSync);
+        }
+        return new GitSkillRepository(url, null, Path.of(localPath.trim()), null, autoSync);
     }
 
-    /** MySQL：databaseName 必填；skillsTableName/writeable 选填；用平台数据源 */
+    /**
+     * MySQL：databaseName 必填；skillsTableName/writeable 选填；用平台数据源
+     */
     private AgentSkillRepository buildMysql(JSONObject config) {
         return MysqlSkillRepository.builder(dataSource)
                 .databaseName(required(config, "databaseName"))
@@ -54,12 +69,16 @@ public class SkillRepoFactory {
                 .build();
     }
 
-    /** Classpath：directory 必填（如 skills，对应 src/main/resources/skills/） */
+    /**
+     * Classpath：directory 必填（如 skills，对应 src/main/resources/skills/）
+     */
     private AgentSkillRepository buildClasspath(JSONObject config) throws Exception {
         return new ClasspathSkillRepository(required(config, "directory"));
     }
 
-    /** 取必填配置项，缺失抛异常（由调用方记日志跳过该仓库） */
+    /**
+     * 取必填配置项，缺失抛异常（由调用方记日志跳过该仓库）
+     */
     private String required(JSONObject config, String key) {
         String value = config.getStr(key);
         if (StrUtil.isBlank(value)) {

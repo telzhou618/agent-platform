@@ -142,9 +142,14 @@ public class SkillRepoView extends VerticalLayout {
         gitUrl.setWidthFull();
         Checkbox autoSync = new Checkbox("自动同步（autoSync）");
         autoSync.setHelperText("开启后每次读取做轻量化远端检查，HEAD 变化才 pull");
-        FormLayout gitSection = new FormLayout(gitUrl, autoSync);
+        TextField localPath = new TextField("本地缓存目录");
+        localPath.setPlaceholder("选填，如 workspaces/skill-repos/team-skills");
+        localPath.setHelperText("填写后克隆到固定目录复用，读取更快（推荐）；留空则每次克隆到临时目录");
+        localPath.setWidthFull();
+        FormLayout gitSection = new FormLayout(gitUrl, autoSync, localPath);
         gitSection.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         gitSection.setColspan(gitUrl, 2);
+        gitSection.setColspan(localPath, 2);
 
         // MySQL 专属字段（不挂 Binder，手动 get/set）；使用平台自己的数据源
         TextField databaseName = new TextField("数据库名");
@@ -187,7 +192,7 @@ public class SkillRepoView extends VerticalLayout {
         }
         binder.readBean(repo);
         // 类型专属字段：编辑时从 config JSON 回填；新建给默认值
-        fillTypeFields(repo, gitUrl, autoSync, databaseName, skillsTableName, writeable, directory);
+        fillTypeFields(repo, gitUrl, autoSync, localPath, databaseName, skillsTableName, writeable, directory);
         // readBean 不触发 ValueChange（初始同值时），显式同步一次区块显隐
         gitSection.setVisible(SkillRepo.TYPE_GIT.equals(type.getValue()));
         mysqlSection.setVisible(SkillRepo.TYPE_MYSQL.equals(type.getValue()));
@@ -204,7 +209,7 @@ public class SkillRepoView extends VerticalLayout {
             if (!binder.writeBeanIfValid(repo)) {
                 return;
             }
-            String config = buildConfigJson(repo.getType(), gitUrl, autoSync,
+            String config = buildConfigJson(repo.getType(), gitUrl, autoSync, localPath,
                     databaseName, skillsTableName, writeable, directory);
             if (config == null) {
                 return;
@@ -225,13 +230,14 @@ public class SkillRepoView extends VerticalLayout {
     }
 
     /** 编辑时按类型从 config JSON 回填专属字段；新建时给 autoSync / 表名默认值 */
-    private void fillTypeFields(SkillRepo repo, TextField gitUrl, Checkbox autoSync,
+    private void fillTypeFields(SkillRepo repo, TextField gitUrl, Checkbox autoSync, TextField localPath,
                                 TextField databaseName, TextField skillsTableName, Checkbox writeable,
                                 TextField directory) {
         JSONObject config = StrUtil.isBlank(repo.getConfig())
                 ? JSONUtil.createObj() : JSONUtil.parseObj(repo.getConfig());
         gitUrl.setValue(StrUtil.nullToEmpty(config.getStr("url")));
         autoSync.setValue(config.getBool("autoSync", true));
+        localPath.setValue(StrUtil.nullToEmpty(config.getStr("localPath")));
         databaseName.setValue(StrUtil.nullToEmpty(config.getStr("databaseName")));
         skillsTableName.setValue(StrUtil.blankToDefault(config.getStr("skillsTableName"), "skills"));
         writeable.setValue(config.getBool("writeable", false));
@@ -242,7 +248,7 @@ public class SkillRepoView extends VerticalLayout {
      * 校验当前类型必填项并组装 config JSON；校验失败提示后返回 null。
      * 选填项只存非空值，布尔项始终存。
      */
-    private String buildConfigJson(String type, TextField gitUrl, Checkbox autoSync,
+    private String buildConfigJson(String type, TextField gitUrl, Checkbox autoSync, TextField localPath,
                                    TextField databaseName, TextField skillsTableName, Checkbox writeable,
                                    TextField directory) {
         JSONObject config = JSONUtil.createObj();
@@ -258,6 +264,9 @@ public class SkillRepoView extends VerticalLayout {
             }
             config.set("url", gitUrl.getValue().trim());
             config.set("autoSync", autoSync.getValue());
+            if (StrUtil.isNotBlank(localPath.getValue())) {
+                config.set("localPath", localPath.getValue().trim());
+            }
         } else if (SkillRepo.TYPE_MYSQL.equals(type)) {
             if (StrUtil.isBlank(databaseName.getValue())) {
                 Notify.error("MySQL 技能仓库必须填写数据库名");

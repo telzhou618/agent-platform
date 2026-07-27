@@ -11,10 +11,12 @@ import com.example.agent.system.mapper.SkillRepoMapper;
 import io.agentscope.core.skill.AgentSkill;
 import io.agentscope.core.skill.repository.AgentSkillRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
@@ -55,10 +57,22 @@ public class SkillRepoService extends ServiceImpl<SkillRepoMapper, SkillRepo> {
 
     /** 列出仓库内全部技能，三种类型通用（git/classpath 只读场景也只用到这个） */
     public List<AgentSkill> listSkills(Long repoId) {
-        try (AgentSkillRepository repository = skillRepoFactory.fromConfig(requireRepo(repoId))) {
+        AgentSkillRepository repository = null;
+        try {
+            repository = skillRepoFactory.fromConfig(requireRepo(repoId));
             return repository.getAllSkills();
         } catch (Exception e) {
             throw new IllegalStateException("读取技能列表失败：" + e.getMessage(), e);
+        } finally {
+            // 关闭失败不影响读取结果：Windows 上 JGit 对 pack 文件的句柄释放滞后，
+            // 删除临时克隆目录可能抛 AccessDeniedException，只记日志（临时目录由 JVM 退出钩子再清理）
+            if (repository != null) {
+                try {
+                    repository.close();
+                } catch (Exception e) {
+                    log.warn("关闭技能仓库失败（可忽略）：{}", e.getMessage());
+                }
+            }
         }
     }
 

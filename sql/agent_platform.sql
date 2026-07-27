@@ -223,12 +223,15 @@ insert into custom_tool (tool_key, name, description, url, method, request_type,
 
 -- ----------------------------
 -- 测试数据：技能仓库（git/mysql/classpath 三种来源）
--- 注意：git 类型的 url 是本机路径，换环境请改成实际的技能 git 仓库地址
+-- 注意：第一条 git 类型的 url 是本机路径，换环境请改成实际的技能 git 仓库地址；
+--       第四条为 GitHub 免费公开技能仓库示例（AgentScope 官方 skills 仓库，只读，需能访问 GitHub），
+--       localPath 为本地克隆缓存目录（相对项目根，复用克隆、避免每次临时克隆）
 -- ----------------------------
 insert into skill_repo (name, type, config, remark, user_id, create_time, update_time) values
 ('测试Git技能仓库', 'git', '{"url":"D:/code/agent-platform/testdata/git-skills","autoSync":true}', '本地 git 仓库验证（含 demo-git-skill）', 1, now(), now()),
 ('测试MySQL技能仓库', 'mysql', '{"databaseName":"agent_platform","skillsTableName":"skills","writeable":false}', '平台库 skills 表验证（含 demo-mysql-skill）', 1, now(), now()),
-('测试Classpath技能仓库', 'classpath', '{"directory":"skills"}', 'src/main/resources/skills 验证（含 demo-classpath-skill）', 1, now(), now());
+('测试Classpath技能仓库', 'classpath', '{"directory":"skills"}', 'src/main/resources/skills 验证（含 demo-classpath-skill）', 1, now(), now()),
+('AgentScope官方技能仓库', 'git', '{"url":"https://github.com/agentscope-ai/skills.git","autoSync":true,"localPath":"workspaces/skill-repos/agentscope-ai-skills"}', 'GitHub 免费公开仓库，skills/ 目录下含 agentscope-skill、nano-memory 等技能', 1, now(), now());
 
 -- ----------------------------
 -- 测试数据：MySQL 技能仓库的技能内容表（与 MysqlSkillRepository 自动建表结构一致，
