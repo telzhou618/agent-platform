@@ -198,7 +198,7 @@ public class AgentView extends VerticalLayout {
 
         MultiSelectComboBox<String> tools = new MultiSelectComboBox<>("系统工具");
         tools.setItems(toolService.listToolNames());
-        tools.setHelperText("可选工具来自「系统工具」中解析出的内置工具，所有人可见");
+        tools.setHelperText("可选工具来自「系统工具」中解析出的内置工具，所有人可见；新建时默认全选");
 
         MultiSelectComboBox<CustomTool> customTools = new MultiSelectComboBox<>("自定义工具");
         List<CustomTool> customToolList = customToolService.list();
@@ -315,6 +315,10 @@ public class AgentView extends VerticalLayout {
         model.setRequiredIndicatorVisible(true);
 
         binder.readBean(agent);
+        // 新建时默认选中全部系统工具（编辑时保持原配置）
+        if (isNew) {
+            tools.setValue(new LinkedHashSet<>(toolService.listToolNames()));
+        }
 
         FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, customTools, mcpServers,
                 knowledgeBases, skillRepos);
