@@ -19,7 +19,9 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 
 import java.time.Year;
 
-/** 主布局：顶部栏 + 经典管理后台侧边导航 */
+/**
+ * 主布局：顶部栏 + 经典管理后台侧边导航
+ */
 @StyleSheet("context://styles/side-nav.css")
 public class MainLayout extends AppLayout {
 
@@ -64,11 +66,11 @@ public class MainLayout extends AppLayout {
         nav.addItem(item("首页", HomeView.class, VaadinIcon.HOME));
         nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
-        nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
-        nav.addItem(item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB));
         nav.addItem(item("系统工具", ToolView.class, VaadinIcon.TOOLS));
         nav.addItem(item("自定义工具", CustomToolView.class, VaadinIcon.EXTERNAL_LINK));
         nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
+        nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
+        nav.addItem(item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB));
         nav.addItem(item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY));
         nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
         // 用户管理、操作日志仅管理员可见
@@ -88,7 +90,9 @@ public class MainLayout extends AppLayout {
                 .set("font-size", "var(--lumo-font-size-xs)");
     }
 
-    /** 路由内容外包一层：视图占满剩余空间，版权信息固定在主页面底部居中 */
+    /**
+     * 路由内容外包一层：视图占满剩余空间，版权信息固定在主页面底部居中
+     */
     @Override
     public void showRouterLayoutContent(HasElement content) {
         Div viewContainer = new Div();
