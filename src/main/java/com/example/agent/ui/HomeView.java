@@ -310,7 +310,9 @@ public class HomeView extends VerticalLayout {
             Div empty = new Div();
             empty.setText("还没有配置模型，去添加一个吧");
             empty.addClassName("active-empty");
-            panel.add(empty, linkButton("添加模型", VaadinIcon.PLUS, "models"));
+            Div links = new Div(linkButton("添加模型", VaadinIcon.PLUS, "models"));
+            links.addClassName("quick-links");
+            panel.add(empty, links);
             return panel;
         }
 
@@ -318,19 +320,33 @@ public class HomeView extends VerticalLayout {
         long available = summary[0];
         long unavailable = summary[1];
 
-        // 可用占比进度条
+        // 左侧大数字：可用 / 总数
+        Div ratio = new Div();
+        ratio.setText(available + "/" + total);
+        ratio.addClassName("model-status-ratio");
+        Div ratioBox = new Div(ratio, span("模型可用", "model-status-ratio-label"));
+        ratioBox.addClassName("model-status-ratio-box");
+
+        // 右侧：可用占比进度条 + 明细数字
         Div fill = new Div();
         fill.addClassName("model-status-fill");
         fill.getStyle().set("width", Math.round(available * 100.0 / total) + "%");
         Div bar = new Div(fill);
         bar.addClassName("model-status-bar");
+        Span numbers = span("共 " + total + " 个模型 · 可用 " + available + " 个 · 不可用 " + unavailable + " 个",
+                "model-status-numbers");
+        Div barBlock = new Div(bar, numbers);
+        barBlock.addClassName("model-status-bar-block");
 
-        Span numbers = span("共 " + total + " 个模型 · 可用 " + available + " 个", "model-status-numbers");
-        panel.add(bar, numbers);
+        Div body = new Div(ratioBox, barBlock);
+        body.addClassName("model-status-body");
+        panel.add(body);
 
         if (unavailable > 0) {
             Span warn = span(unavailable + " 个模型不可用，建议前往模型管理重新检测", "model-status-warn");
-            panel.add(warn, linkButton("去处理", VaadinIcon.WRENCH, "models"));
+            Div links = new Div(linkButton("去处理", VaadinIcon.WRENCH, "models"));
+            links.addClassName("quick-links");
+            panel.add(warn, links);
         }
         return panel;
     }

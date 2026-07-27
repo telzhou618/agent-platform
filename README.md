@@ -1,7 +1,7 @@
 # agent-platform
 
 基于 **AgentScope Java 2.0 + Spring Boot 3 + Vaadin + MySQL + MyBatis-Plus + Java 17** 的综合性 Agent 管理平台，代码风格参考 [vaadin-admin](../vaadin-admin)。
-
+![img.png](imgs/img.png)
 ## 功能
 
 - 模型管理（`/models`）：CRUD，支持 DashScope、OpenAI、Anthropic、自定义（baseUrl / apiKey）

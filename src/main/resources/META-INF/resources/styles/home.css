@@ -333,11 +333,48 @@
 
 /* ---------- 模型可用状态 ---------- */
 
+/* 主体：左侧大数字 + 右侧进度条，垂直居中填满面板高度 */
+.model-status-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-l);
+    margin-top: var(--lumo-space-s);
+}
+
+/* 左侧大数字区：与进度条之间竖向分割线 */
+.model-status-ratio-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--lumo-space-xs);
+    padding-right: var(--lumo-space-l);
+    border-right: 1px solid var(--lumo-contrast-10pct);
+    flex-shrink: 0;
+}
+
+.model-status-ratio {
+    font-size: var(--lumo-font-size-xxl);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--lumo-success-text-color);
+}
+
+.model-status-ratio-label {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+}
+
+.model-status-bar-block {
+    flex: 1;
+    min-width: 0;
+}
+
 .model-status-bar {
     width: 100%;
-    height: 10px;
+    height: 8px;
     background: var(--lumo-contrast-10pct);
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
 }
 
@@ -345,37 +382,43 @@
 .model-status-fill {
     height: 100%;
     background: linear-gradient(to right, var(--lumo-success-color-50pct), var(--lumo-success-color));
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
 .model-status-numbers {
     display: block;
-    margin-top: var(--lumo-space-s);
+    margin-top: var(--lumo-space-xs);
     font-size: var(--lumo-font-size-s);
     color: var(--lumo-secondary-text-color);
 }
 
 .model-status-warn {
     display: block;
-    margin-top: var(--lumo-space-s);
+    margin-top: var(--lumo-space-m);
     font-size: var(--lumo-font-size-s);
     color: var(--lumo-error-text-color);
 }
 
 /* ---------- 快捷入口 ---------- */
 
+/* auto-fit 折叠空轨道，按钮均匀铺满整行；行在面板内垂直居中 */
 .quick-links {
+    flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: var(--lumo-space-m);
+    align-content: center;
+    margin-top: var(--lumo-space-s);
 }
 
+/* 图标在上、文字在下的磁贴式按钮 */
 .quick-link {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--lumo-space-s);
-    padding: var(--lumo-space-m);
+    padding: var(--lumo-space-m) var(--lumo-space-s);
     border: 1px solid var(--lumo-contrast-10pct);
     border-radius: var(--lumo-border-radius-m);
     cursor: pointer;
@@ -388,10 +431,15 @@
     transform: translateY(-1px);
 }
 
+/* 圆形底色图标，与顶部统计卡片风格统一 */
 .quick-link-icon {
-    width: 16px;
-    height: 16px;
+    width: 32px;
+    height: 32px;
+    padding: 8px;
+    box-sizing: border-box;
+    border-radius: 50%;
     color: var(--lumo-primary-color);
+    background: var(--lumo-primary-color-10pct);
 }
 
 .quick-link-label {
@@ -428,11 +476,15 @@
 
 .panel-model {
     flex: 2;
+    display: flex;
+    flex-direction: column;
 }
 
 .panel-quick {
     flex: 3;
     min-width: 420px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 标题左侧主色装饰条 */
