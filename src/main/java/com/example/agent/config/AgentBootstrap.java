@@ -60,7 +60,13 @@ public class AgentBootstrap implements ApplicationRunner {
                     .collect(Collectors.toMap(CustomTool::getId, Function.identity()));
             List<AgentInfo> agents = agentInfoService.list();
             int ok = 0;
+            int disabled = 0;
             for (AgentInfo agent : agents) {
+                // 禁用的智能体不注册实例
+                if (!agent.isEnabled()) {
+                    disabled++;
+                    continue;
+                }
                 try {
                     agentRegistry.register(agent, models.get(agent.getModelId()),
                             mcpServersOf(agent, mcpServers), knowledgeBasesOf(agent, knowledgeBases),
@@ -70,7 +76,7 @@ public class AgentBootstrap implements ApplicationRunner {
                     log.error("注册智能体「{}」失败：{}", agent.getName(), e.getMessage());
                 }
             }
-            log.info("启动注册智能体完成：{}/{} 个成功", ok, agents.size());
+            log.info("启动注册智能体完成：{}/{} 个成功，{} 个禁用跳过", ok, agents.size() - disabled, disabled);
         } catch (Exception e) {
             log.error("启动注册智能体失败（数据库不可用？）：{}", e.getMessage());
         }

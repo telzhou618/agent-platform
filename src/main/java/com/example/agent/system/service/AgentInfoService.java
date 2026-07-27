@@ -40,7 +40,8 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
     }
 
     /**
-     * 保存智能体（新增/编辑）：落库后同步注册/重建容器中的实例
+     * 保存智能体（新增/编辑）：落库后同步注册/重建容器中的实例；
+     * 禁用状态的智能体不注册实例（已注册的销毁）
      */
     @OperationLog(module = "智能体管理", action = "保存", summary = "#agent.name")
     public void saveAgent(AgentInfo agent) {
@@ -56,8 +57,39 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
         agent.setSkillRepos(agent.getSkillRepos() == null ? "[]" : agent.getSkillRepos());
 
         saveOrUpdate(agent);
-        agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
-                mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent), customToolsOf(agent));
+        syncRegistry(agent);
+    }
+
+    /**
+     * 启用/禁用智能体：落库后同步注册/销毁容器中的实例
+     */
+    @OperationLog(module = "智能体管理", action = "启停", summary = "#id")
+    public void setAgentStatus(Long id, boolean enable) {
+        AgentInfo agent = getById(id);
+        if (agent == null) {
+            throw new IllegalArgumentException("智能体不存在");
+        }
+        agent.setStatus(enable ? AgentInfo.STATUS_ENABLED : AgentInfo.STATUS_DISABLED);
+        updateById(agent);
+        syncRegistry(agent);
+    }
+
+    /** 全部启用的智能体（对话页可选列表；存量 status 为 null 的按启用处理） */
+    public List<AgentInfo> listEnabled() {
+        return lambdaQuery()
+                .and(q -> q.isNull(AgentInfo::getStatus).or().eq(AgentInfo::getStatus, AgentInfo.STATUS_ENABLED))
+                .orderByDesc(AgentInfo::getCreateTime)
+                .list();
+    }
+
+    /** 按状态同步容器实例：启用则注册/重建，禁用则销毁 */
+    private void syncRegistry(AgentInfo agent) {
+        if (agent.isEnabled()) {
+            agentRegistry.register(agent, modelConfigService.getById(agent.getModelId()),
+                    mcpServersOf(agent), knowledgeBasesOf(agent), skillReposOf(agent), customToolsOf(agent));
+        } else {
+            agentRegistry.unregister(agent.getId());
+        }
     }
 
     /**

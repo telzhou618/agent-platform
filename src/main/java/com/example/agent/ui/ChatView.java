@@ -46,7 +46,7 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
     private final MessageInput input = new MessageInput();
 
     /**
-     * 可选智能体列表（进入视图时查一次，预选按 ID 匹配）
+     * 可选智能体列表（仅启用状态，进入视图时查一次，预选按 ID 匹配）
      */
     private final List<AgentInfo> agents;
 
@@ -58,7 +58,7 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
 
     public ChatView(AgentInfoService agentInfoService, ChatService chatService) {
         this.chatService = chatService;
-        this.agents = agentInfoService.list();
+        this.agents = agentInfoService.listEnabled();
         setSizeFull();
 
         H2 title = new H2("流式对话");

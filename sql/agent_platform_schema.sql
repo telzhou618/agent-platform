@@ -58,6 +58,7 @@ create table agent_info (
     knowledge_bases varchar(1024) null comment '知识库 ID 列表，JSON 数组',
     skill_repos varchar(1024) null comment '技能仓库 ID 列表，JSON 数组',
     custom_tools varchar(1024) null comment '自定义工具 ID 列表，JSON 数组',
+    status      tinyint       not null default 1 comment '状态：1 启用 0 禁用（禁用后不注册实例、不可对话）',
     description varchar(256)  null comment '描述',
     user_id     bigint        null comment '创建人（sys_user.id），管理员可看全部',
     create_time datetime      null comment '创建时间',

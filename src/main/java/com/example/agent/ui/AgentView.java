@@ -30,6 +30,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -79,6 +80,14 @@ public class AgentView extends VerticalLayout {
      */
     private Map<Long, ModelConfig> modelMap = Map.of();
 
+    /**
+     * 各类关联资源 ID -> 名称，供 Grid 徽标列展示
+     */
+    private Map<Long, String> customToolNames = Map.of();
+    private Map<Long, String> mcpNames = Map.of();
+    private Map<Long, String> kbNames = Map.of();
+    private Map<Long, String> repoNames = Map.of();
+
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
                      ToolService toolService, McpServerService mcpServerService,
                      KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
@@ -111,12 +120,17 @@ public class AgentView extends VerticalLayout {
 
         grid.addColumn(AgentInfo::getId).setHeader("ID").setWidth("80px").setFlexGrow(0);
         grid.addColumn(AgentInfo::getName).setHeader("名称");
+        grid.addComponentColumn(this::statusBadge).setHeader("状态").setWidth("90px").setFlexGrow(0);
         grid.addColumn(a -> modelName(a.getModelId())).setHeader("模型");
         grid.addColumn(a -> StrUtil.brief(StrUtil.nullToEmpty(a.getSysPrompt()), 30)).setHeader("系统提示词");
-        grid.addComponentColumn(a -> toolBadges(a.getTools())).setHeader("系统工具");
+        grid.addComponentColumn(a -> badges(parseTools(a.getTools()))).setHeader("系统工具");
+        grid.addComponentColumn(a -> badges(idNames(a.getCustomTools(), customToolNames))).setHeader("自定义工具");
+        grid.addComponentColumn(a -> badges(idNames(a.getMcpServers(), mcpNames))).setHeader("MCP服务");
+        grid.addComponentColumn(a -> badges(idNames(a.getKnowledgeBases(), kbNames))).setHeader("知识库");
+        grid.addComponentColumn(a -> badges(idNames(a.getSkillRepos(), repoNames))).setHeader("技能仓库");
         grid.addColumn(a -> StrUtil.nullToEmpty(a.getDescription())).setHeader("描述");
         grid.addColumn(a -> DateUtil.format(a.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("创建时间");
-        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("240px").setFlexGrow(0);
+        grid.addComponentColumn(this::actionButtons).setHeader("操作").setWidth("300px").setFlexGrow(0);
         grid.setSizeFull();
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
@@ -125,28 +139,65 @@ public class AgentView extends VerticalLayout {
     }
 
     private Component actionButtons(AgentInfo agent) {
+        boolean enabled = agent.isEnabled();
         Button chat = new Button("对话", e -> getUI().ifPresent(ui -> ui.navigate(ChatView.class, agent.getId())));
         chat.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        chat.setVisible(enabled);
         Button edit = new Button("编辑", e -> openDialog(agent));
         edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        Button toggle = new Button(enabled ? "禁用" : "启用", e -> toggleStatus(agent));
+        toggle.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button("删除", e -> confirmDelete(agent));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        return new HorizontalLayout(chat, edit, delete);
+        return new HorizontalLayout(chat, edit, toggle, delete);
+    }
+
+    /** 启用/禁用切换：禁用后销毁容器实例、对话页不可选；启用则重新注册 */
+    private void toggleStatus(AgentInfo agent) {
+        boolean enable = !agent.isEnabled();
+        try {
+            agentService.setAgentStatus(agent.getId(), enable);
+            refresh();
+            Notify.success(enable ? "已启用「" + agent.getName() + "」" : "已禁用「" + agent.getName() + "」");
+        } catch (Exception ex) {
+            Notify.error(ex.getMessage());
+        }
+    }
+
+    /** 状态徽标：启用绿色 / 禁用红色 */
+    private Component statusBadge(AgentInfo agent) {
+        boolean enabled = agent.isEnabled();
+        Span badge = new Span(enabled ? "启用" : "禁用");
+        badge.getElement().getThemeList().add(enabled ? "badge success" : "badge error");
+        return badge;
     }
 
     /**
-     * 工具名列表渲染为徽标组
+     * 名称列表渲染为徽标组
      */
-    private Component toolBadges(String toolsJson) {
+    private Component badges(List<String> names) {
         HorizontalLayout badges = new HorizontalLayout();
         badges.setSpacing(false);
         badges.getStyle().set("gap", "var(--lumo-space-xs)");
-        for (String name : parseTools(toolsJson)) {
+        for (String name : names) {
             Span badge = new Span(name);
             badge.getElement().getThemeList().add("badge");
             badges.add(badge);
         }
         return badges;
+    }
+
+    /**
+     * JSON ID 数组字符串 -> 关联资源名称列表（ID 已删除的名称跳过）
+     */
+    private List<String> idNames(String json, Map<Long, String> nameMap) {
+        if (StrUtil.isBlank(json)) {
+            return List.of();
+        }
+        return JSONUtil.toList(json, Long.class).stream()
+                .map(nameMap::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private String modelName(Long modelId) {
@@ -171,6 +222,14 @@ public class AgentView extends VerticalLayout {
     private void loadPage(int page, int pageSize) {
         modelMap = modelService.list().stream()
                 .collect(Collectors.toMap(ModelConfig::getId, Function.identity()));
+        customToolNames = customToolService.list().stream()
+                .collect(Collectors.toMap(CustomTool::getId, CustomTool::getName));
+        mcpNames = mcpServerService.list().stream()
+                .collect(Collectors.toMap(McpServer::getId, McpServer::getName));
+        kbNames = knowledgeBaseService.list().stream()
+                .collect(Collectors.toMap(KnowledgeBase::getId, KnowledgeBase::getName));
+        repoNames = skillRepoService.list().stream()
+                .collect(Collectors.toMap(SkillRepo::getId, SkillRepo::getName));
         Page<AgentInfo> result = agentService.pageAgents(keyword.getValue(), page, pageSize);
         grid.setItems(result.getRecords());
         paginationBar.setTotal(result.getTotal());
@@ -336,18 +395,78 @@ public class AgentView extends VerticalLayout {
             if (!binder.writeBeanIfValid(agent)) {
                 return;
             }
+            // 保存是重量级操作（注册/重建实例），先展示配置摘要让用户确认
+            confirmSave(agent, dialog, isNew, model.getValue(),
+                    tools.getValue(), customTools.getValue(), mcpServers.getValue(),
+                    knowledgeBases.getValue(), skillRepos.getValue());
+        });
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getFooter().add(cancel, save);
+        dialog.open();
+    }
+
+    /**
+     * 保存前确认弹窗：展示配置摘要，确认信息完整无误后才执行保存
+     */
+    private void confirmSave(AgentInfo agent, Dialog editDialog, boolean isNew, ModelConfig model,
+                             Set<String> tools, Set<CustomTool> customTools, Set<McpServer> mcpServers,
+                             Set<KnowledgeBase> knowledgeBases, Set<SkillRepo> skillRepos) {
+        Dialog confirm = new Dialog();
+        confirm.setHeaderTitle(isNew ? "确认创建智能体" : "确认保存修改");
+        confirm.setWidth("480px");
+
+        VerticalLayout summary = new VerticalLayout();
+        summary.setPadding(false);
+        summary.setSpacing(false);
+        summary.getStyle().set("gap", "var(--lumo-space-xs)");
+        addSummaryLine(summary, "名称", agent.getName());
+        addSummaryLine(summary, "模型", model == null ? null : model.getName() + "（" + model.getModel() + "）");
+        addSummaryLine(summary, "状态", agent.isEnabled() ? "启用" : "禁用");
+        addSummaryLine(summary, "系统工具", summarize(tools, Function.identity()));
+        addSummaryLine(summary, "自定义工具", summarize(customTools, CustomTool::getName));
+        addSummaryLine(summary, "MCP服务", summarize(mcpServers, McpServer::getName));
+        addSummaryLine(summary, "知识库", summarize(knowledgeBases, KnowledgeBase::getName));
+        addSummaryLine(summary, "技能仓库", summarize(skillRepos, SkillRepo::getName));
+
+        Paragraph hint = new Paragraph("保存后将立即注册/重建智能体实例，请确认以上信息完整无误。");
+        hint.getStyle().set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-s)");
+        confirm.add(summary, hint);
+
+        Button back = new Button("返回修改", e -> confirm.close());
+        Button ok = new Button("确认保存", e -> {
             try {
                 agentService.saveAgent(agent);
-                dialog.close();
+                confirm.close();
+                editDialog.close();
                 refresh();
                 Notify.success("保存成功");
             } catch (Exception ex) {
                 Notify.error(ex.getMessage());
             }
         });
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        dialog.getFooter().add(cancel, save);
-        dialog.open();
+        ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        confirm.getFooter().add(back, ok);
+        confirm.open();
+    }
+
+    /** 摘要区一行：加粗标签 + 值 */
+    private void addSummaryLine(VerticalLayout layout, String label, String value) {
+        Paragraph line = new Paragraph();
+        line.getStyle().set("margin", "0");
+        Span labelSpan = new Span(label + "：");
+        labelSpan.getStyle().set("font-weight", "600");
+        line.add(labelSpan, new Span(StrUtil.nullToDefault(value, "-")));
+        layout.add(line);
+    }
+
+    /** 多选集合 -> 「名称1、名称2（共 n 个）」，空集合显示「无」 */
+    private <T> String summarize(Set<T> items, Function<T, String> nameFn) {
+        if (CollUtil.isEmpty(items)) {
+            return "无";
+        }
+        List<String> names = items.stream().map(nameFn).toList();
+        return String.join("、", names) + "（共 " + items.size() + " 个）";
     }
 
     private void confirmDelete(AgentInfo agent) {
