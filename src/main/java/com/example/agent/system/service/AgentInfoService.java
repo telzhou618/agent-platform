@@ -48,7 +48,7 @@ public class AgentInfoService extends ServiceImpl<AgentInfoMapper, AgentInfo> {
             throw new IllegalArgumentException("请选择模型");
         }
 
-        // 可清除置信息
+        // 可清除配置信息
         agent.setTools(agent.getTools() == null ? "[]" : agent.getTools());
         agent.setCustomTools(agent.getCustomTools() == null ? "[]" : agent.getCustomTools());
         agent.setMcpServers(agent.getMcpServers() == null ? "[]" : agent.getMcpServers());
