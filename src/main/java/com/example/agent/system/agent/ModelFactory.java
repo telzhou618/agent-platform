@@ -7,6 +7,10 @@ import io.agentscope.extensions.model.anthropic.AnthropicChatModel;
 import io.agentscope.extensions.model.anthropic.formatter.AnthropicChatFormatter;
 import io.agentscope.extensions.model.dashscope.DashScopeChatModel;
 import io.agentscope.extensions.model.dashscope.formatter.DashScopeChatFormatter;
+import io.agentscope.extensions.model.gemini.GeminiChatModel;
+import io.agentscope.extensions.model.gemini.formatter.GeminiChatFormatter;
+import io.agentscope.extensions.model.ollama.OllamaChatModel;
+import io.agentscope.extensions.model.ollama.formatter.OllamaChatFormatter;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import io.agentscope.extensions.model.openai.formatter.OpenAIChatFormatter;
 import lombok.RequiredArgsConstructor;
@@ -61,8 +65,33 @@ public class ModelFactory {
             case "dashscope" -> buildDashScope(config);
             case "openai", "custom" -> buildOpenAi(config, null);
             case "anthropic" -> buildAnthropic(config);
+            case "gemini" -> buildGemini(config);
+            case "ollama" -> buildOllama(config);
             default -> throw new IllegalArgumentException("未知供应商 " + config.getProvider());
         };
+    }
+
+    private Model buildGemini(ModelConfig config) {
+        GeminiChatModel.Builder builder = GeminiChatModel.builder()
+                .apiKey(config.getApiKey())
+                .modelName(config.getModel())
+                .streamEnabled(true)
+                .formatter(new GeminiChatFormatter());
+        if (StrUtil.isNotBlank(config.getBaseUrl())) {
+            builder.baseUrl(config.getBaseUrl());
+        }
+        return builder.build();
+    }
+
+    /** Ollama 本地托管无需 apiKey；baseUrl 留空时用默认本地端点（http://localhost:11434） */
+    private Model buildOllama(ModelConfig config) {
+        OllamaChatModel.Builder builder = OllamaChatModel.builder()
+                .modelName(config.getModel())
+                .formatter(new OllamaChatFormatter());
+        if (StrUtil.isNotBlank(config.getBaseUrl())) {
+            builder.baseUrl(config.getBaseUrl());
+        }
+        return builder.build();
     }
 
     private Model buildDashScope(ModelConfig config) {

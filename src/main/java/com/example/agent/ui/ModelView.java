@@ -45,6 +45,8 @@ public class ModelView extends VerticalLayout {
         put("minimax", "MiniMax");
         put("openai", "OpenAI");
         put("anthropic", "Anthropic");
+        put("gemini", "Google Gemini");
+        put("ollama", "Ollama（本地）");
         put("custom", "自定义（OpenAI 兼容）");
     }};
 
@@ -134,6 +136,8 @@ public class ModelView extends VerticalLayout {
             case "kimi", "deepseek", "glm", "minimax" -> "badge success primary";
             case "openai" -> "badge";
             case "anthropic" -> "badge contrast";
+            case "gemini" -> "badge success";
+            case "ollama" -> "badge contrast";
             default -> "badge error";
         };
         badge.getElement().getThemeList().add(theme);
@@ -146,6 +150,11 @@ public class ModelView extends VerticalLayout {
             return "";
         }
         return key.length() <= 4 ? "****" : key.substring(0, 4) + "****";
+    }
+
+    /** 该供应商是否需要展示 API 地址：自定义必填，Ollama 选填（默认本地端点） */
+    private static boolean needsBaseUrl(String provider) {
+        return "custom".equals(provider) || "ollama".equals(provider);
     }
 
     private void refresh() {
@@ -172,12 +181,12 @@ public class ModelView extends VerticalLayout {
         provider.setItems(PROVIDERS.keySet());
         provider.setItemLabelGenerator(PROVIDERS::get);
         TextField modelName = new TextField("模型标识");
-        modelName.setHelperText("如 qwen-plus、kimi-k2、deepseek-chat、glm-4、gpt-4o、claude-sonnet-4");
+        modelName.setHelperText("如 qwen-plus、kimi-k2、deepseek-chat、glm-4、gpt-4o、claude-sonnet-4、gemini-2.0-flash、llama3.1");
         modelName.setMaxLength(128);
         TextField baseUrl = new TextField("API 地址");
         baseUrl.setPlaceholder("https://api.example.com/v1");
         baseUrl.setMaxLength(256);
-        baseUrl.setHelperText("仅自定义供应商需要填写，其他供应商使用官方固定端点");
+        baseUrl.setHelperText("自定义供应商必填；Ollama 选填，默认 http://localhost:11434");
         PasswordField apiKey = new PasswordField("API Key");
         apiKey.setPlaceholder("sk-...");
         apiKey.setMaxLength(256);
@@ -208,12 +217,16 @@ public class ModelView extends VerticalLayout {
         provider.setRequiredIndicatorVisible(true);
         modelName.setRequiredIndicatorVisible(true);
 
-        // 仅自定义供应商展示 API 地址；其他供应商走官方固定端点
-        provider.addValueChangeListener(e -> baseUrl.setVisible("custom".equals(e.getValue())));
+        // 自定义供应商必填 API 地址，Ollama 选填（默认本地端点）；Ollama 无需 API Key
+        provider.addValueChangeListener(e -> {
+            baseUrl.setVisible(needsBaseUrl(e.getValue()));
+            apiKey.setVisible(!"ollama".equals(e.getValue()));
+        });
 
         binder.readBean(model);
         // readBean 不触发 ValueChange（初始同值时），显式同步一次显隐
-        baseUrl.setVisible("custom".equals(provider.getValue()));
+        baseUrl.setVisible(needsBaseUrl(provider.getValue()));
+        apiKey.setVisible(!"ollama".equals(provider.getValue()));
 
         FormLayout form = new FormLayout(name, provider, modelName, baseUrl, apiKey, remark);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
@@ -224,9 +237,12 @@ public class ModelView extends VerticalLayout {
             if (!binder.writeBeanIfValid(model)) {
                 return;
             }
-            // 非自定义供应商不落 API 地址，统一走官方固定端点
-            if (!"custom".equals(model.getProvider())) {
+            // 不需要 API 地址的供应商不落库，统一走官方固定端点；Ollama 无需 API Key
+            if (!needsBaseUrl(model.getProvider())) {
                 model.setBaseUrl(null);
+            }
+            if ("ollama".equals(model.getProvider())) {
+                model.setApiKey(null);
             }
             try {
                 modelService.saveModel(model);

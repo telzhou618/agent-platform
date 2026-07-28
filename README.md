@@ -7,7 +7,7 @@
 ## 功能特性
 
 - **数据看板**（`/dashboard`）：渐变 Hero + 资源统计、近 7 日对话趋势、对话数据概览、活跃智能体排行、模型可用环图、快捷入口
-- **模型管理**（`/models`）：CRUD；保存时真实调用验证可用性，支持重新检测；供应商覆盖 DashScope / Kimi / DeepSeek / GLM / MiniMax / OpenAI / Anthropic / 自定义
+- **模型管理**（`/models`）：CRUD；保存时真实调用验证可用性，支持重新检测；供应商覆盖 DashScope / Kimi / DeepSeek / GLM / MiniMax / OpenAI / Anthropic / Gemini / Ollama / 自定义
 - **智能体管理**（`/agents`）：CRUD + 启用/禁用；每个智能体可挂载系统工具、自定义工具、MCP 服务、知识库、技能仓库；保存前确认弹窗
 - **系统工具**（`/tools`）：扫描 `@Tool` 注解组件自动注册，内置查天气（wttr.in 真实数据）、联网搜索（必应）、查日期，不落库
 - **自定义工具**（`/custom-tools`）：配置化 HTTP 工具，无需写代码即可接入任意 REST 接口

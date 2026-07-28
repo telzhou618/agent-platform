@@ -15,7 +15,7 @@ public class ModelConfig extends BaseEntity {
     /** 模型名称（展示用） */
     private String name;
 
-    /** 供应商：dashscope/kimi/deepseek/glm/minimax/openai/anthropic/custom 自定义 */
+    /** 供应商：dashscope/kimi/deepseek/glm/minimax/openai/anthropic/gemini/ollama/custom 自定义 */
     private String provider;
 
     /** 模型标识，如 qwen-plus、gpt-4o、claude-sonnet-4 */

@@ -53,7 +53,7 @@
             <artifactId>agentscope-core</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
-        <!-- AgentScope 模型扩展：DashScope / OpenAI（含自定义 OpenAI 兼容）/ Anthropic -->
+        <!-- AgentScope 模型扩展：DashScope / OpenAI（含自定义 OpenAI 兼容）/ Anthropic / Gemini / Ollama -->
         <dependency>
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-extensions-model-dashscope</artifactId>
@@ -67,6 +67,16 @@
         <dependency>
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-extensions-model-anthropic</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-model-gemini</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-model-ollama</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
         <!-- AgentScope Harness：HarnessAgent（技能/工作区体系） -->
