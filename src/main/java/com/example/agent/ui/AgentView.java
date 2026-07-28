@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
@@ -64,6 +65,7 @@ public class AgentView extends VerticalLayout {
     private final KnowledgeBaseService knowledgeBaseService;
     private final SkillRepoService skillRepoService;
     private final CustomToolService customToolService;
+    private final ChatService chatService;
     private final Grid<AgentInfo> grid = new Grid<>(AgentInfo.class, false);
     private final TextField keyword = new TextField();
     private final PaginationBar paginationBar = new PaginationBar(this::loadPage);
@@ -83,7 +85,7 @@ public class AgentView extends VerticalLayout {
     public AgentView(AgentInfoService agentService, ModelConfigService modelService,
                      ToolService toolService, McpServerService mcpServerService,
                      KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
-                     CustomToolService customToolService) {
+                     CustomToolService customToolService, ChatService chatService) {
         this.agentService = agentService;
         this.modelService = modelService;
         this.toolService = toolService;
@@ -91,6 +93,7 @@ public class AgentView extends VerticalLayout {
         this.knowledgeBaseService = knowledgeBaseService;
         this.skillRepoService = skillRepoService;
         this.customToolService = customToolService;
+        this.chatService = chatService;
         setSizeFull();
 
         H2 title = new H2("智能体管理");
@@ -132,7 +135,7 @@ public class AgentView extends VerticalLayout {
 
     private Component actionButtons(AgentInfo agent) {
         boolean enabled = agent.isEnabled();
-        Button chat = new Button("对话", e -> getUI().ifPresent(ui -> ui.navigate(ChatView.class, agent.getId())));
+        Button chat = new Button("对话", e -> openChatDialog(agent));
         chat.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         chat.setVisible(enabled);
         Button edit = new Button("编辑", e -> openDialog(agent));
@@ -142,6 +145,28 @@ public class AgentView extends VerticalLayout {
         Button delete = new Button("删除", e -> confirmDelete(agent));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         return new HorizontalLayout(chat, edit, toggle, delete);
+    }
+
+    /**
+     * 对话弹窗：大尺寸可拖拽弹窗内嵌对话面板（ChatPanel），预选当前智能体，可关闭
+     */
+    private void openChatDialog(AgentInfo agent) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("与「" + agent.getName() + "」对话");
+        dialog.setWidth("min(1000px, 92vw)");
+        dialog.setHeight("82vh");
+        dialog.setModal(true);
+        dialog.setDraggable(true);
+        dialog.setResizable(true);
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(false);
+
+        Button close = new Button(new Icon(VaadinIcon.CLOSE), e -> dialog.close());
+        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.getHeader().add(close);
+
+        dialog.add(new ChatPanel(agentService.listEnabled(), chatService, agent));
+        dialog.open();
     }
 
     /** 启用/禁用切换：禁用后销毁容器实例、对话页不可选；启用则重新注册 */
