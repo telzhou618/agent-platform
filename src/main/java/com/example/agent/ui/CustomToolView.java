@@ -73,6 +73,10 @@ public class CustomToolView extends VerticalLayout {
         H2 title = new H2("自定义工具");
         title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
 
+        Span hint = new Span("可以将http接口动态注册为工具");
+        hint.getStyle().set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-s)");
+
         keyword.setPlaceholder("标识 / 名称 / 描述");
         keyword.setClearButtonVisible(true);
         keyword.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
@@ -82,9 +86,9 @@ public class CustomToolView extends VerticalLayout {
         search.addThemeVariants(ButtonVariant.LUMO_SMALL);
         Button add = new Button("新增自定义工具", new Icon(VaadinIcon.PLUS), e -> openDialog(new CustomTool()));
         add.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-        HorizontalLayout toolbar = new HorizontalLayout(title, keyword, search, add);
+        HorizontalLayout toolbar = new HorizontalLayout(title,hint, keyword, search, add);
         toolbar.setWidthFull();
-        toolbar.expand(title);
+        toolbar.expand(hint);
         toolbar.setDefaultVerticalComponentAlignment(Alignment.CENTER);
 
         grid.addColumn(CustomTool::getId).setHeader("ID").setWidth("70px").setFlexGrow(0);
