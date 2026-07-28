@@ -44,6 +44,9 @@ public class AgentInfo extends BaseEntity {
     /** 状态：1 启用 0 禁用；存量数据为 null 时按启用处理 */
     private Integer status = STATUS_ENABLED;
 
+    /** 会话状态存储：memory/jsonfile/redis/mysql，默认本地 JSON 文件 */
+    private String stateStore = "jsonfile";
+
     /** 描述 */
     private String description;
 

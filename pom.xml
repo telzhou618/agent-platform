@@ -79,6 +79,33 @@
             <artifactId>agentscope-extensions-model-ollama</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
+        <!-- AgentScope 状态存储扩展：Redis / MySQL AgentStateStore -->
+        <!-- 注：redis 扩展中央仓库暂无 2.0.0，用本地已有的 2.0.0-RC4；其 jedis/redisson/lettuce
+             传递依赖版本本地不全，统一排除，lettuce 复用 spring-data-redis 自带的 -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-redis</artifactId>
+            <version>2.0.0-RC4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>redis.clients</groupId>
+                    <artifactId>jedis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.redisson</groupId>
+                    <artifactId>redisson</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.lettuce</groupId>
+                    <artifactId>lettuce-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-mysql</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
         <!-- AgentScope Harness：HarnessAgent（技能/工作区体系） -->
         <dependency>
             <groupId>io.agentscope</groupId>

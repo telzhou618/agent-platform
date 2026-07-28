@@ -52,3 +52,16 @@
 ## 实现 ApiKey 管理等功能。
 1. 增加一个 ApiKey 管理菜单，实现ApiKey 的 CRUD功能，自己只能看到自己的 ApiKey，管理员能看到所有的，删除防止越权，这里的 ApiKey将来用于访问智能体。
 2. 修改一下 dashboard 查询数据逻辑，普通用户只能看自己的智能体产生的数据记录，管理员能看所有的。
+
+
+## 新需求
+参考文档：https://java.agentscope.io/v2/zh/docs/building-blocks/context.html
+
+实现给Agent 配置 AgentStateStote，用来存储会话数据，具体要求如下：
+
+1. 预先实现 InMemoryAgentStateStore、JsonFileAgentStateStore、RedisAgentStateStore、MysqlAgentStateStore 四种存储方式。
+2. 在Agent创建时选择一种 AgentState 存储。
+3. 不同的 Agent 可以选择不同的 AgentState, 且数据时隔离。
+4. 在资源菜单下增加一个子菜单，名字叫“数据存储”，可以列出系统配置的所有 AgentStateStote 列表和基本配置信息。
+
+先计划再执行，如果有不明确或不合理的可以问我确认一下。

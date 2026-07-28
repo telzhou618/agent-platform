@@ -32,3 +32,11 @@ sa-token:
   timeout: 604800
   is-log: false
   is-read-cookie: true
+
+# 智能体会话状态存储（AgentStateStore）配置
+agent-platform:
+  state-store:
+    json-dir: workspaces/state              # JsonFile 根目录（每智能体一个子目录隔离）
+    redis-key-prefix: agent-platform:state  # Redis key 前缀（后拼 agent-<id> 隔离）
+    mysql-database: agentscope              # MySQL 状态库（不存在自动创建）
+    mysql-table: agentscope_sessions        # MySQL 共用表（不存在自动创建）

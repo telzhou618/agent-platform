@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 智能体实例注册中心：按 agent_info 配置把 HarnessAgent 动态注册为 Spring 单例 Bean，
- * 创建时即固化它的系统提示词、模型、系统工具、MCP 服务工具、知识库和技能仓库。
+ * 创建时即固化它的系统提示词、模型、系统工具、MCP 服务工具、知识库、技能仓库和会话状态存储。
  * 管理端新增/编辑 -> register 重建；删除 -> unregister；启动 -> 全量 register；
  * 模型、MCP 服务、知识库或技能仓库变更/删除 -> onXxxChanged / onXxxDeleted 级联重建引用它的实例。
  */
@@ -49,6 +49,7 @@ public class AgentRegistry {
     private final McpClientFactory mcpClientFactory;
     private final KnowledgeFactory knowledgeFactory;
     private final SkillRepoFactory skillRepoFactory;
+    private final AgentStateStoreFactory stateStoreFactory;
     /** 全局工具箱：仅用于取系统 AgentTool 实例，组装各智能体的专属工具箱 */
     private final Toolkit toolkit;
 
@@ -281,6 +282,8 @@ public class AgentRegistry {
                 .toolkit(agentToolkit)
                 .agentId("agent-" + agent.getId())
                 .workspace("workspaces/agent-" + agent.getId())
+                // 会话状态存储：按智能体配置选择 memory/jsonfile/redis/mysql，数据互相隔离
+                .stateStore(stateStoreFactory.create(agent.getStateStore(), agent.getId()))
                 // 关闭 Harness 默认子系统：提示词/工具/技能由平台 DB 管理，
                 // 不注入工作区文件、不开长期记忆、不开子 agent、不读 tools.json
                 .disableWorkspaceContext()

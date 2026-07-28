@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.agent.system.agent.AgentStateStoreFactory;
 import com.example.agent.system.agent.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.CustomTool;
@@ -37,6 +38,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -46,6 +48,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +79,16 @@ public class AgentView extends VerticalLayout {
     private static final Map<String, String> KNOWLEDGE_TYPES = Map.of(
             KnowledgeBase.TYPE_BAILIAN, "阿里云百炼",
             KnowledgeBase.TYPE_DIFY, "Dify");
+
+    /**
+     * 会话状态存储 -> 展示名
+     */
+    private static final Map<String, String> STATE_STORE_NAMES = new LinkedHashMap<>() {{
+        put(AgentStateStoreFactory.TYPE_JSONFILE, "本地 JSON 文件（默认）");
+        put(AgentStateStoreFactory.TYPE_MEMORY, "内存（重启丢失）");
+        put(AgentStateStoreFactory.TYPE_REDIS, "Redis");
+        put(AgentStateStoreFactory.TYPE_MYSQL, "MySQL");
+    }};
 
     /**
      * 模型 ID -> 模型，供 Grid 展示名称
@@ -241,6 +254,12 @@ public class AgentView extends VerticalLayout {
         model.setItems(models);
         model.setItemLabelGenerator(m -> m.getName() + "（" + m.getModel() + "）");
 
+        Select<String> stateStore = new Select<>();
+        stateStore.setLabel("会话状态存储");
+        stateStore.setItems(STATE_STORE_NAMES.keySet());
+        stateStore.setItemLabelGenerator(STATE_STORE_NAMES::get);
+        stateStore.setHelperText("会话历史的持久化方式，各实现之间数据隔离，配置与可用性见「数据存储」页");
+
         TextArea sysPrompt = new TextArea("系统提示词");
         sysPrompt.setWidthFull();
         sysPrompt.setMinHeight("8em");
@@ -360,6 +379,9 @@ public class AgentView extends VerticalLayout {
                                 .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .bind(AgentInfo::getSkillRepos, AgentInfo::setSkillRepos);
         binder.bind(description, AgentInfo::getDescription, AgentInfo::setDescription);
+        binder.forField(stateStore)
+                .asRequired("请选择会话状态存储")
+                .bind(AgentInfo::getStateStore, AgentInfo::setStateStore);
 
         name.setRequiredIndicatorVisible(true);
         model.setRequiredIndicatorVisible(true);
@@ -370,8 +392,8 @@ public class AgentView extends VerticalLayout {
             tools.setValue(new LinkedHashSet<>(toolService.listToolNames()));
         }
 
-        FormLayout form = new FormLayout(name, model, description, sysPrompt, tools, customTools, mcpServers,
-                knowledgeBases, skillRepos);
+        FormLayout form = new FormLayout(name, model, stateStore, description, sysPrompt, tools, customTools,
+                mcpServers, knowledgeBases, skillRepos);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
         form.setColspan(sysPrompt, 2);
         form.setColspan(tools, 2);
@@ -413,6 +435,7 @@ public class AgentView extends VerticalLayout {
         addSummaryLine(summary, "名称", agent.getName());
         addSummaryLine(summary, "模型", model == null ? null : model.getName() + "（" + model.getModel() + "）");
         addSummaryLine(summary, "状态", agent.isEnabled() ? "启用" : "禁用");
+        addSummaryLine(summary, "状态存储", STATE_STORE_NAMES.getOrDefault(agent.getStateStore(), "-"));
         addSummaryLine(summary, "系统工具", summarize(tools, Function.identity()));
         addSummaryLine(summary, "自定义工具", summarize(customTools, CustomTool::getName));
         addSummaryLine(summary, "MCP服务", summarize(mcpServers, McpServer::getName));
