@@ -16,8 +16,8 @@ public class StateStoreProperties {
     /** Redis key 前缀（后拼 agent-<id> 隔离） */
     private String redisKeyPrefix = "agent-platform:state";
 
-    /** MySQL 状态库名（不存在自动创建） */
-    private String mysqlDatabase = "agentscope";
+    /** MySQL 状态库名；默认空 = 跟随主数据源库名（spring.datasource 配置的库） */
+    private String mysqlDatabase;
 
     /** MySQL 共用表名（不存在自动创建） */
     private String mysqlTable = "agentscope_sessions";

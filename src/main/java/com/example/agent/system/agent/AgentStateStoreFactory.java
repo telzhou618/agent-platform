@@ -67,7 +67,7 @@ public class AgentStateStoreFactory {
                         .keyPrefix(properties.getRedisKeyPrefix() + ":agent-" + agentId + ":")
                         .build();
                 case TYPE_MYSQL -> new MysqlAgentStateStore(dataSource,
-                        properties.getMysqlDatabase(), properties.getMysqlTable(), true);
+                        mysqlDatabase(), properties.getMysqlTable(), true);
                 default -> throw new IllegalArgumentException("未知存储类型 " + type);
             };
         } catch (Exception e) {
@@ -114,8 +114,9 @@ public class AgentStateStoreFactory {
 
     /** MySQL 存储信息 + SELECT 1 检测 */
     private StateStoreInfo mysqlInfo(long agentCount) {
-        String config = "库表：" + properties.getMysqlDatabase() + "." + properties.getMysqlTable()
-                + "（不存在自动创建），按 userId:sessionId 寻址";
+        String database = mysqlDatabase();
+        String config = "库表：" + database + "." + properties.getMysqlTable()
+                + "（与主库同库，表不存在自动创建），按 userId:sessionId 寻址";
         boolean available = true;
         String detail = "连接正常";
         try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
@@ -127,6 +128,25 @@ public class AgentStateStoreFactory {
         return new StateStoreInfo(TYPE_MYSQL, "MySQL",
                 "状态沉淀到关系库，便于审计与查询",
                 config, available, detail, agentCount);
+    }
+
+    /**
+     * MySQL 状态库名：配置项优先；默认取主数据源连接当前的库名（与项目主库同库），
+     * 读取失败时回退主库常用名 agent_platform
+     */
+    private String mysqlDatabase() {
+        if (StrUtil.isNotBlank(properties.getMysqlDatabase())) {
+            return properties.getMysqlDatabase();
+        }
+        try (Connection conn = dataSource.getConnection()) {
+            String catalog = conn.getCatalog();
+            if (StrUtil.isNotBlank(catalog)) {
+                return catalog;
+            }
+        } catch (Exception e) {
+            log.warn("读取主数据源库名失败，回退 agent_platform：{}", e.getMessage());
+        }
+        return "agent_platform";
     }
 
     private AgentStateStore jsonFileStore(Long agentId) {
