@@ -6,7 +6,7 @@
 
 ## 功能特性
 
-- **数据看板**（`/dashboard`）：渐变 Hero + 资源统计、近 7 日对话趋势、对话数据概览、活跃智能体排行、模型可用环图、快捷入口
+- **首页数据看板**（`/`）：渐变 Hero + 资源统计、近 7 日对话趋势、对话数据概览、活跃智能体排行、模型可用环图、快捷入口
 - **模型管理**（`/models`）：CRUD；保存时真实调用验证可用性，支持重新检测；供应商覆盖 DashScope / Kimi / DeepSeek / GLM / MiniMax / OpenAI / Anthropic / Gemini / Ollama / 自定义
 - **智能体管理**（`/agents`）：CRUD + 启用/禁用；每个智能体可挂载系统工具、自定义工具、MCP 服务、知识库、技能仓库；保存前确认弹窗
 - **系统工具**（`/tools`）：扫描 `@Tool` 注解组件自动注册，内置查天气（wttr.in 真实数据）、联网搜索（必应）、查日期，不落库
@@ -75,10 +75,10 @@ java -jar target/agent-platform-1.0.0.jar
     │   │   ├── log/            # 操作日志注解 + AOP
     │   │   └── service/        # 业务逻辑 + ToolService（@Tool 扫描注册）
     │   ├── tool/               # 内置系统工具：WeatherTools、SearchTools、DateTimeTools
-    │   └── ui/                 # MainLayout + 各管理页 + HomeView / DashboardView / ChatView
+    │   └── ui/                 # MainLayout + 各管理页 + DashboardView / ChatView
     └── resources/
         ├── application.yml
-        └── META-INF/resources/styles/  # 各页面独立样式（dashboard.css / home.css / ...）
+        └── META-INF/resources/styles/  # 各页面独立样式（dashboard.css / chat.css / ...）
 ```
 
 ## 关键设计说明

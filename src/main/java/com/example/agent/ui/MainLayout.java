@@ -64,8 +64,7 @@ public class MainLayout extends AppLayout {
 
         addToDrawer(
                 section("概览"),
-                navOf(item("首页", HomeView.class, VaadinIcon.HOME),
-                        item("数据看板", DashboardView.class, VaadinIcon.DASHBOARD)),
+                navOf(item("首页", DashboardView.class, VaadinIcon.DASHBOARD)),
                 section("资源管理"),
                 navOf(item("模型管理", ModelView.class, VaadinIcon.DATABASE),
                         item("系统工具", ToolView.class, VaadinIcon.TOOLS),

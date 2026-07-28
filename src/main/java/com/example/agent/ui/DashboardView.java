@@ -37,11 +37,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 数据看板：渐变 Hero + 资源统计 + 对话趋势 / 对话概览 + 活跃排行 / 模型可用环图 + 快捷入口。
- * 与旧首页 HomeView 并存（路由 /dashboard），统计数据同样来自 chat_record 埋点，样式见 styles/dashboard.css。
+ * 首页数据看板：渐变 Hero + 资源统计 + 对话趋势 / 对话概览 + 活跃排行 / 模型可用环图 + 快捷入口。
+ * 统计数据来自 chat_record 埋点，各资源数量由租户插件按当前用户自动过滤。样式见 styles/dashboard.css。
  */
-@Route(value = "dashboard", layout = MainLayout.class)
-@PageTitle("数据看板 - agent-platform")
+@Route(value = "", layout = MainLayout.class)
+@PageTitle("首页 - agent-platform")
 @StyleSheet("context://styles/dashboard.css")
 public class DashboardView extends VerticalLayout {
 
