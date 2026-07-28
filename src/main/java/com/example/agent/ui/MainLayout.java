@@ -72,8 +72,8 @@ public class MainLayout extends AppLayout {
                         item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG),
                         item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK),
                         item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB),
-                        item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY),
-                        item("数据存储", StateStoreView.class, VaadinIcon.ARCHIVE)),
+                        item("数据存储", StateStoreView.class, VaadinIcon.ARCHIVE),
+                        item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY)),
                 section("应用"),
                 navOf(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER),
                         item("流式对话", ChatView.class, VaadinIcon.CHAT)
