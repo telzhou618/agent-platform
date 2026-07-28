@@ -138,7 +138,7 @@ public class CustomToolView extends VerticalLayout {
         boolean isNew = tool.getId() == null;
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(isNew ? "新增自定义工具" : "编辑自定义工具");
-        dialog.setWidth("720px");
+        dialog.setWidth("820px");
 
         TextField toolKey = new TextField("工具标识");
         toolKey.setPlaceholder("如：get_public_ip（唯一，模型调用名）");
