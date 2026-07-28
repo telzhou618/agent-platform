@@ -64,6 +64,7 @@ public class MainLayout extends AppLayout {
 
         SideNav nav = new SideNav();
         nav.addItem(item("首页", HomeView.class, VaadinIcon.HOME));
+        nav.addItem(item("数据看板", DashboardView.class, VaadinIcon.DASHBOARD));
         nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
         nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
         nav.addItem(item("系统工具", ToolView.class, VaadinIcon.TOOLS));
