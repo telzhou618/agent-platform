@@ -62,24 +62,28 @@ public class MainLayout extends AppLayout {
         }
         addToNavbar(header);
 
-        SideNav nav = new SideNav();
-        nav.addItem(item("首页", HomeView.class, VaadinIcon.HOME));
-        nav.addItem(item("数据看板", DashboardView.class, VaadinIcon.DASHBOARD));
-        nav.addItem(item("模型管理", ModelView.class, VaadinIcon.DATABASE));
-        nav.addItem(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER));
-        nav.addItem(item("系统工具", ToolView.class, VaadinIcon.TOOLS));
-        nav.addItem(item("自定义工具", CustomToolView.class, VaadinIcon.EXTERNAL_LINK));
-        nav.addItem(item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG));
-        nav.addItem(item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK));
-        nav.addItem(item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB));
-        nav.addItem(item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY));
-        nav.addItem(item("流式对话", ChatView.class, VaadinIcon.CHAT));
+        addToDrawer(
+                section("概览"),
+                navOf(item("首页", HomeView.class, VaadinIcon.HOME),
+                        item("数据看板", DashboardView.class, VaadinIcon.DASHBOARD)),
+                section("资源管理"),
+                navOf(item("模型管理", ModelView.class, VaadinIcon.DATABASE),
+                        item("系统工具", ToolView.class, VaadinIcon.TOOLS),
+                        item("自定义工具", CustomToolView.class, VaadinIcon.EXTERNAL_LINK),
+                        item("MCP服务管理", McpServerView.class, VaadinIcon.PLUG),
+                        item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK),
+                        item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB),
+                        item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY)),
+                section("应用"),
+                navOf(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER),
+                        item("流式对话", ChatView.class, VaadinIcon.CHAT)
+                ));
         // 用户管理、操作日志仅管理员可见
         if (LoginHelper.isAdmin()) {
-            nav.addItem(item("用户管理", UserView.class, VaadinIcon.USERS));
-            nav.addItem(item("操作日志", OperationLogView.class, VaadinIcon.CLIPBOARD_TEXT));
+            addToDrawer(section("系统"),
+                    navOf(item("用户管理", UserView.class, VaadinIcon.USERS),
+                            item("操作日志", OperationLogView.class, VaadinIcon.CLIPBOARD_TEXT)));
         }
-        addToDrawer(nav);
 
         // 主内容区底部居中的版权信息
         Span copyright = new Span("Copyright © " + Year.now().getValue() + " agent-platform 版权所有");
@@ -112,5 +116,24 @@ public class MainLayout extends AppLayout {
         SideNavItem item = new SideNavItem(label, view);
         item.setPrefixComponent(new Icon(icon));
         return item;
+    }
+
+    /**
+     * 一组菜单项包一个 SideNav（分组标题 + 独立分组，便于分区间距控制）
+     */
+    private SideNav navOf(SideNavItem... items) {
+        SideNav nav = new SideNav();
+        nav.addItem(items);
+        return nav;
+    }
+
+    /**
+     * 分组小标题：灰字宽字距，与数据看板副标题风格一致
+     */
+    private Div section(String label) {
+        Div section = new Div();
+        section.setText(label);
+        section.addClassName("side-nav-section");
+        return section;
     }
 }

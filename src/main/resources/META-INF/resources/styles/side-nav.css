@@ -1,48 +1,71 @@
-/* 左侧菜单样式：圆角菜单项 + 悬停/当前页高亮 + 左侧强调条 */
+/* ============ 左侧菜单：与数据看板同套蓝紫渐变规范 ============ */
 
-/* 抽屉背景与分隔线 */
+/* 抽屉背景：顶部淡蓝紫渐变过渡到白底，呼应 Hero */
 vaadin-app-layout::part(drawer) {
-    background: linear-gradient(180deg, var(--lumo-base-color) 0%, var(--lumo-contrast-5pct) 100%);
+    background: linear-gradient(180deg, #f3f4ff 0%, var(--lumo-base-color) 260px);
     border-right: 1px solid var(--lumo-contrast-10pct);
 }
 
+/* 分组小标题：灰字 + 宽字距 */
+.side-nav-section {
+    padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-xs) var(--lumo-space-l);
+    font-size: var(--lumo-font-size-xs);
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--lumo-tertiary-text-color);
+    user-select: none;
+}
+
 vaadin-side-nav {
-    padding: var(--lumo-space-s);
+    padding: 0 var(--lumo-space-s);
 }
 
 vaadin-side-nav-item {
     margin: 2px 0;
 }
 
-/* 菜单项 */
+/* 菜单项：圆角 + 位移/底色过渡 */
 vaadin-side-nav-item::part(link) {
     border-radius: 10px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     color: var(--lumo-body-text-color);
-    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
+        transform 0.18s ease;
 }
 
-/* 悬停 */
-vaadin-side-nav-item::part(link):hover {
-    background-color: var(--lumo-primary-color-10pct);
-    color: var(--lumo-primary-text-color);
-}
-
-/* 当前页：主色淡底 + 左侧强调条 */
-vaadin-side-nav-item[current]::part(link) {
-    background-color: var(--lumo-primary-color-10pct);
-    color: var(--lumo-primary-text-color);
-    font-weight: 600;
-    box-shadow: inset 3px 0 0 0 var(--lumo-primary-color);
-}
-
-/* 图标随状态变色 */
+/* 图标：圆角方块浅底，与看板面板头图标一致 */
 vaadin-side-nav-item vaadin-icon {
+    width: 30px;
+    height: 30px;
+    padding: 7px;
+    box-sizing: border-box;
+    border-radius: 8px;
     color: var(--lumo-secondary-text-color);
-    transition: color 0.18s ease;
+    background: var(--lumo-contrast-5pct);
+    transition: color 0.18s ease, background-color 0.18s ease;
 }
 
-vaadin-side-nav-item:hover vaadin-icon,
-vaadin-side-nav-item[current] vaadin-icon {
+/* 悬停：主色淡底 + 轻微右移 */
+vaadin-side-nav-item:not([current])::part(link):hover {
+    background-color: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+    transform: translateX(2px);
+}
+
+vaadin-side-nav-item:not([current]):hover vaadin-icon {
     color: var(--lumo-primary-color);
+    background: var(--lumo-primary-color-10pct);
+}
+
+/* 当前页：蓝紫渐变底 + 白字 + 投影，与看板 Hero / 统计卡图标同语言 */
+vaadin-side-nav-item[current]::part(link) {
+    background: linear-gradient(135deg, #4c6ef5, #7048e8);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.35);
+}
+
+vaadin-side-nav-item[current] vaadin-icon {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.22);
 }
