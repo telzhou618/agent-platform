@@ -2,8 +2,8 @@ package com.example.agent;
 
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.agent.AgentRegistry;
-import com.example.agent.system.agent.ChatChunk;
-import com.example.agent.system.agent.ChatService;
+import com.example.agent.system.chat.ChatChunk;
+import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.service.AgentInfoService;
 import org.junit.jupiter.api.BeforeAll;

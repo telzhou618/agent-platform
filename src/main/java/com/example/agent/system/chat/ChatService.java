@@ -1,8 +1,9 @@
-package com.example.agent.system.agent;
+package com.example.agent.system.chat;
 
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
+import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.service.ChatRecordService;
 import io.agentscope.core.agent.RuntimeContext;

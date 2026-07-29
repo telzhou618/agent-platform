@@ -1,4 +1,4 @@
-package com.example.agent.controller.dto;
+package com.example.agent.proxy.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;

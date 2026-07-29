@@ -1,11 +1,12 @@
-package com.example.agent.system.agent;
+package com.example.agent.proxy;
 
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
-import com.example.agent.controller.dto.AgentSseEvent;
-import com.example.agent.controller.dto.AgentSession;
-import com.example.agent.controller.dto.ChatRequest;
+import com.example.agent.proxy.dto.AgentSseEvent;
+import com.example.agent.proxy.dto.AgentSession;
+import com.example.agent.proxy.dto.ChatRequest;
+import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.ApiKey;
 import com.example.agent.system.entity.SysUser;

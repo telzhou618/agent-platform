@@ -1,4 +1,4 @@
-package com.example.agent.system.agent;
+package com.example.agent.proxy;
 
 import lombok.Getter;
 

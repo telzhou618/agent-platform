@@ -1,7 +1,7 @@
 package com.example.agent;
 
-import com.example.agent.system.agent.AgentProxyException;
-import com.example.agent.system.agent.SensitiveWordFilter;
+import com.example.agent.proxy.AgentProxyException;
+import com.example.agent.proxy.SensitiveWordFilter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

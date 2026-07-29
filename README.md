@@ -69,12 +69,13 @@ java -jar target/agent-platform-1.0.0.jar
 └── src/main/
     ├── java/com/example/agent/
     │   ├── config/             # MyBatis-Plus 分页与字段填充、管理员初始化、启动注册智能体、OpenAPI 文档
-    │   ├── controller/         # 开放接口（/api/agent/**，X-Api-Key 鉴权）+ 接口 DTO
+    │   ├── proxy/              # 开放接口（/api/agent/**，X-Api-Key 鉴权），自包含：controller/service/敏感词/DTO
     │   ├── system/
     │   │   ├── entity/         # 模型/智能体/知识库/MCP/技能仓库/用户/对话记录等 12 张表
     │   │   ├── mapper/         # BaseMapper + 看板统计 SQL
     │   │   ├── dto/            # ToolInfo、看板统计 DTO
     │   │   ├── agent/          # AgentRegistry、ModelFactory、MCP/知识库/技能工厂、可用性检测
+    │   │   ├── chat/           # 管理端流式对话（ChatService/ChatChunk）
     │   │   ├── auth/           # sa-token 登录、数据权限（租户过滤）
     │   │   ├── log/            # 操作日志注解 + AOP
     │   │   └── service/        # 业务逻辑 + ToolService（@Tool 扫描注册）

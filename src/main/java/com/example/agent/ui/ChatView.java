@@ -1,6 +1,6 @@
 package com.example.agent.ui;
 
-import com.example.agent.system.agent.ChatService;
+import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.service.AgentInfoService;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;

@@ -1,6 +1,6 @@
 package com.example.agent.ui;
 
-import com.example.agent.system.agent.ChatChunk;
+import com.example.agent.system.chat.ChatChunk;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;

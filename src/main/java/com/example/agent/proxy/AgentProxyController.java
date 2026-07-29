@@ -1,12 +1,10 @@
-package com.example.agent.controller;
+package com.example.agent.proxy;
 
 import com.alibaba.fastjson2.JSON;
 import com.example.agent.common.Result;
-import com.example.agent.controller.dto.AgentSession;
-import com.example.agent.controller.dto.AgentSseEvent;
-import com.example.agent.controller.dto.ChatRequest;
-import com.example.agent.system.agent.AgentProxyException;
-import com.example.agent.system.agent.AgentProxyService;
+import com.example.agent.proxy.dto.AgentSession;
+import com.example.agent.proxy.dto.AgentSseEvent;
+import com.example.agent.proxy.dto.ChatRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.agentscope.core.message.Msg;
 import io.swagger.v3.oas.annotations.Operation;

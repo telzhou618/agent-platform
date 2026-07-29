@@ -1,4 +1,4 @@
-package com.example.agent.system.agent;
+package com.example.agent.system.chat;
 
 /**
  * 流式对话的输出单元：回复文本、思考过程、工具调用三类信息统一成一条流。

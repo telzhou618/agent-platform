@@ -6,7 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agent.system.agent.AgentStateStoreFactory;
-import com.example.agent.system.agent.ChatService;
+import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;

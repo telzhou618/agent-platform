@@ -1,6 +1,6 @@
 package com.example.agent.config;
 
-import com.example.agent.controller.AgentProxyController;
+import com.example.agent.proxy.AgentProxyController;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
