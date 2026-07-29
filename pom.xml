@@ -164,6 +164,18 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
+        <!-- Knife4j 接口文档：/doc.html（基于 springdoc-openapi，/v3/api-docs） -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+        <!-- swagger-core 解析模型时引用 javax.xml.bind（JDK17 已移除），需显式引入 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
         <!-- Markdown 渲染：对话内容富文本展示 -->
         <dependency>
             <groupId>org.commonmark</groupId>

@@ -65,3 +65,69 @@
 4. 在资源菜单下增加一个子菜单，名字叫“数据存储”，可以列出系统配置的所有 AgentStateStote 列表和基本配置信息。
 
 先计划再执行，如果有不明确或不合理的可以问我确认一下。
+
+
+## AgentProxy 代理服务
+基于当前项目框，实现通用 Agent 代理聊天相关的接口，具体要求要求：
+1. 新建一个 controller 包，新增一个 AgentProxyController 类，实现一套流式对话相关接口,这些接口给外部使用，不需要登录管理端，用 apiKey 保证安全。
+3. 所有接口必须传入 apikey(header传入) 和 agentId, 收到请求时根据 apikey 关联的用户，找到用户有权限的 Agent 才能个对话。
+2. 接口1：流式对话接口，需要传入 apikey、agentId、userId、sessionId、message, 进行流式对话、返回如下，需要解析AgentEvent进行转换：
+	```java
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public class AgentSseEvent {
+	    private String type;       // agent_start | thinking | text_block | tool_call | tool_result | agent_result | agent_end
+	    private String content;    // 文本增量或完整文本
+	    private String role;
+	    private ToolCallInfo toolCall;  // 工具调用信息
+
+	    @Data
+	    @Builder
+	    @NoArgsConstructor
+	    @AllArgsConstructor
+	    public static class ToolCallInfo {
+	        private String toolCallId;  // 工具调用 ID
+	        private String toolName;    // 工具名称
+	        private String toolParams;  // 完整参数（JSON 字符串），tool_call 时使用
+	        private String toolResults;  // 工具调用结果（JSON 字符串），tool_result 时使用
+	    }
+	}
+
+	```
+3. 接口2：会话列表，根据 apikey、agentId、userId 获取会话列表，返回对象如下：
+	```java
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public class AgentSession {
+
+	    private String userId;
+
+	    private String sessionId;
+	    /**
+	     * 摘要
+	     */
+	    private String summary;
+	    /**
+	     * 首次发送消息时间
+	     */
+	    private String timestamp;
+
+
+	}
+	```
+4. 接口3：会话详情，根据 apikey、agentId、userId、sessionId 获取会话详情，即一个会话的历史消息，不分页, 将 AgentScope 的 List<Msg>原样返回。
+
+5. 接口4：删除会话: 跟据 apikey、agentId、userId、sessionId 删除会话。
+
+6. 接口5：中断会话: 跟据 apikey、agentId、userId、sessionId 中断会话。
+
+7. 除了流式对话接口1之外，其余接口返回数据用统一的 Result 包装一下，Result在 D:\github\agent-platform\src\main\java\com\example\agent\common\Result.java
+
+8. 以上需要 apiKey 的接口apiKey改成在 header 中传入。
+
+8. 引入 Knife4j 自动生成接口文档，访问接口文档不需要登录管理端。
