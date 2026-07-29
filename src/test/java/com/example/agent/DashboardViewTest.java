@@ -9,7 +9,7 @@ import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
 import com.example.agent.system.service.ToolService;
-import com.example.agent.ui.DashboardView;
+import com.example.agent.ui.view.DashboardView;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

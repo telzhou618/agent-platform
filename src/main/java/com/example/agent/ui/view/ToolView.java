@@ -1,7 +1,8 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import com.example.agent.system.dto.ToolInfo;
 import com.example.agent.system.service.ToolService;
+import com.example.agent.ui.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

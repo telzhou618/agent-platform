@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.entity.SysUser;
 import com.example.agent.system.service.SysUserService;
+import com.example.agent.ui.MainLayout;
+import com.example.agent.ui.component.FormValidators;
+import com.example.agent.ui.component.Notify;
+import com.example.agent.ui.component.PaginationBar;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;

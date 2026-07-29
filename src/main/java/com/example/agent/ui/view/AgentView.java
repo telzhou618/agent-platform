@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
@@ -20,6 +20,10 @@ import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
 import com.example.agent.system.service.ToolService;
+import com.example.agent.ui.MainLayout;
+import com.example.agent.ui.chat.ChatPanel;
+import com.example.agent.ui.component.Notify;
+import com.example.agent.ui.component.PaginationBar;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;

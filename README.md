@@ -80,7 +80,10 @@ java -jar target/agent-platform-1.0.0.jar
     │   │   ├── log/            # 操作日志注解 + AOP
     │   │   └── service/        # 业务逻辑 + ToolService（@Tool 扫描注册）
     │   ├── tool/               # 内置系统工具：WeatherTools、SearchTools、DateTimeTools
-    │   └── ui/                 # MainLayout + 各管理页 + DashboardView / ChatView
+    │   └── ui/                 # MainLayout + LoginView（登录页不挂主布局）
+    │       ├── view/           # 13 个管理页（Dashboard / 智能体 / 模型 / 工具 / 对话等）
+    │       ├── chat/           # 流式对话面板：ChatPanel、AssistantMessageView、MarkdownRenderer
+    │       └── component/      # 通用组件：Notify、FormValidators、PaginationBar
     └── resources/
         ├── application.yml
         └── META-INF/resources/styles/  # 各页面独立样式（dashboard.css / chat.css / ...）

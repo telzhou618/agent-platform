@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.component;
 
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;

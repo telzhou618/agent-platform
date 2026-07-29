@@ -1,6 +1,6 @@
 package com.example.agent;
 
-import com.example.agent.ui.MarkdownRenderer;
+import com.example.agent.ui.chat.MarkdownRenderer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

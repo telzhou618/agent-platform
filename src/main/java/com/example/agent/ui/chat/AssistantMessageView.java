@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.chat;
 
 import com.example.agent.system.chat.ChatChunk;
 import com.vaadin.flow.component.avatar.Avatar;

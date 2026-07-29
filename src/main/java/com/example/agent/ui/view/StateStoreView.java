@@ -1,9 +1,10 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.agent.AgentStateStoreFactory;
 import com.example.agent.system.dto.StateStoreInfo;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.ui.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

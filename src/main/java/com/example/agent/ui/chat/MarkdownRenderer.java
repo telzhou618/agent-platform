@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.chat;
 
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;

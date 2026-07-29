@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.component;
 
 import cn.hutool.core.util.StrUtil;
 import com.vaadin.flow.data.binder.Validator;

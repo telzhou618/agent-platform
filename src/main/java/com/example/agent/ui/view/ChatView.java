@@ -1,7 +1,9 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.service.AgentInfoService;
+import com.example.agent.ui.MainLayout;
+import com.example.agent.ui.chat.ChatPanel;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEvent;

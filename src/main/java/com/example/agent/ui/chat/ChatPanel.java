@@ -1,8 +1,9 @@
-package com.example.agent.ui;
+package com.example.agent.ui.chat;
 
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.ui.component.Notify;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;

@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.component;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

@@ -1,4 +1,4 @@
-package com.example.agent.ui;
+package com.example.agent.ui.view;
 
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.auth.LoginUser;
@@ -14,6 +14,7 @@ import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
 import com.example.agent.system.service.ToolService;
+import com.example.agent.ui.MainLayout;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.StyleSheet;
