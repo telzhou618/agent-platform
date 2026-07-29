@@ -25,7 +25,7 @@ class ApiKeyModuleTest {
 
     /** 新增时服务端自动生成 ak- 前缀 Key 并落库 */
     @Test
-    void 新增自动生成Key() {
+    void createAutoGeneratesKey() {
         ApiKey key = new ApiKey();
         key.setName("单元测试Key");
         key.setRemark("ApiKeyModuleTest");
@@ -46,7 +46,7 @@ class ApiKeyModuleTest {
 
     /** 分页查询按名称 / 备注关键字过滤 */
     @Test
-    void 关键字过滤() {
+    void pageFiltersByKeyword() {
         ApiKey key = new ApiKey();
         key.setName("关键字过滤专用名XYZ");
         apiKeyService.saveApiKey(key);
@@ -63,13 +63,13 @@ class ApiKeyModuleTest {
 
     /** 删除不存在（或无权限）的记录显式报错，而不是静默成功 */
     @Test
-    void 删除不存在的记录显式报错() {
+    void deleteNonExistentThrows() {
         assertThrows(IllegalStateException.class, () -> apiKeyService.deleteApiKey(-999L));
     }
 
     /** 编辑不存在（或无权限）的记录显式报错 */
     @Test
-    void 编辑不存在的记录显式报错() {
+    void editNonExistentThrows() {
         ApiKey key = new ApiKey();
         key.setId(-999L);
         key.setName("不存在的记录");

@@ -41,7 +41,7 @@ class DashboardViewTest {
     private ChatRecordService chatRecordService;
 
     @Test
-    void 看板正常构建() {
+    void dashboardBuildsSuccessfully() {
         DashboardView view = new DashboardView(modelConfigService, agentInfoService, knowledgeBaseService,
                 skillRepoService, toolService, customToolService, mcpServerService, apiKeyService,
                 chatRecordService);
@@ -50,12 +50,12 @@ class DashboardViewTest {
     }
 
     @Test
-    void 趋势固定返回7天() {
+    void weeklyTrendReturns7Days() {
         assertEquals(7, chatRecordService.weeklyTrend().size());
     }
 
     @Test
-    void 活跃榜不超过5条() {
+    void topActiveAgentsAtMost5() {
         assertTrue(chatRecordService.topActiveAgents().size() <= 5);
     }
 }
