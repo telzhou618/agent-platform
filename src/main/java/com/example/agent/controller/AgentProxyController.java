@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -65,8 +64,8 @@ public class AgentProxyController {
         try {
             events = agentProxyService.streamChat(apiKey, request);
         } catch (AgentProxyException e) {
-            // produces=text/event-stream 下 Result 走不通消息转换器，直接手写 401 错误体
-            writeUnauthorized(response, e.getMessage());
+            // produces=text/event-stream 下 Result 走不通消息转换器，直接手写错误体
+            writeError(response, e);
             return null;
         }
         return events
@@ -82,12 +81,12 @@ public class AgentProxyController {
                 });
     }
 
-    /** 手写 401 JSON 错误体（SSE 端点鉴权失败场景，绕开 text/event-stream 内容协商） */
-    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    /** 手写 JSON 错误体（SSE 端点流开始前失败场景，绕开 text/event-stream 内容协商） */
+    private void writeError(HttpServletResponse response, AgentProxyException e) throws IOException {
+        response.setStatus(e.getCode());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.getWriter().write(objectMapper.writeValueAsString(Result.unauthorized(message)));
+        response.getWriter().write(objectMapper.writeValueAsString(Result.error(e.getCode(), e.getMessage())));
         response.getWriter().flush();
     }
 
@@ -134,9 +133,9 @@ public class AgentProxyController {
         return Result.ok();
     }
 
-    /** 鉴权/参数异常统一返回 code=401（HTTP 200） */
+    /** 鉴权/参数/敏感词异常：错误码随异常携带（HTTP 200，业务码见 Result.code） */
     @ExceptionHandler(AgentProxyException.class)
     public Result<Void> handleProxyException(AgentProxyException e) {
-        return Result.unauthorized(e.getMessage());
+        return Result.error(e.getCode(), e.getMessage());
     }
 }

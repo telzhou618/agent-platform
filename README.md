@@ -91,7 +91,7 @@ java -jar target/agent-platform-1.0.0.jar
 - **系统工具解析**：`ToolService` 在 Spring 单例就绪后扫描所有 Bean，把带 `@Tool` 注解的方法反射注册进 AgentScope `Toolkit`。新增系统工具只需再写一个带 `@Tool` 注解的 `@Component`，重启生效。
 - **技能仓库**：`GitSkillRepository` 克隆远程仓库到本地缓存目录（`localPath` 可指定持久位置），仓库根存在 `skills/` 子目录时优先扫描，只识别直接子目录中符合规范的 `SKILL.md`。
 - **对话统计**：`ChatService` 每轮对话结束异步写入 `chat_record`（工具调用数、耗时、成功与否），看板的趋势/概览/活跃榜全部由它聚合，普通用户只统计自己名下智能体的数据。
-- **开放接口鉴权**（`AgentProxyService`）：`/api/agent/**` 不走管理端登录态，凭请求头 `X-Api-Key` 定位 key 的归属用户，再校验其是否有权访问目标智能体（本人创建或管理员）；会话列表/详情/删除直接读写该智能体的 `AgentStateStore`（`agent_state` key），中断走 `ReActAgent.interrupt(userId, sessionId)` 会话级协作式中断；流式对话独立于管理端 `ChatService`，由 `AgentProxyService` 直接驱动 HarnessAgent，事件逐条转换为 `AgentSseEvent` 后以 `Flux<ServerSentEvent>` 推送——工具入参增量按 toolCallId 累积、在 ToolCallEndEvent 输出完整参数（支持并行工具调用），工具结果增量逐条输出，流内异常以 `event=error` 事件下发。
+- **开放接口鉴权**（`AgentProxyService`）：`/api/agent/**` 不走管理端登录态，凭请求头 `X-Api-Key` 定位 key 的归属用户，再校验其是否有权访问目标智能体（本人创建或管理员）；会话列表/详情/删除直接读写该智能体的 `AgentStateStore`（`agent_state` key），中断走 `ReActAgent.interrupt(userId, sessionId)` 会话级协作式中断；流式对话独立于管理端 `ChatService`，由 `AgentProxyService` 直接驱动 HarnessAgent，事件逐条转换为 `AgentSseEvent` 后以 `Flux<ServerSentEvent>` 推送——工具入参增量按 toolCallId 累积、在 ToolCallEndEvent 输出完整参数（支持并行工具调用），工具结果增量逐条输出，流内异常以 `event=error` 事件下发；入参消息先经敏感词过滤（houbb sensitive-word 默认词库，`SensitiveWordFilter`），命中即拒绝（400）并返回命中的词。
 - **会话状态存储**（`AgentStateStoreFactory`）：按智能体配置的 `state_store` 类型构建 AgentScope `AgentStateStore` 注入 HarnessAgent——内存（独立实例）、本地 JSON 文件（`workspaces/state/agent-<id>` 子目录）、Redis（每智能体 key 前缀）、MySQL（与主库同库的 `agentscope_sessions` 表，官方 userId:sessionId 寻址），四种实现之间数据互相隔离。
 - **数据权限**：MyBatis 租户插件按当前登录用户自动过滤各表 `user_id`，管理员（`is_admin=1`）不过滤。
 - **逻辑删除**：各表均有 `deleted` 字段，MyBatis-Plus 全局配置逻辑删除。

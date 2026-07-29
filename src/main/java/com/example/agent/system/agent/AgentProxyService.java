@@ -65,6 +65,7 @@ public class AgentProxyService {
     private final ApiKeyService apiKeyService;
     private final AgentInfoService agentInfoService;
     private final SysUserService sysUserService;
+    private final SensitiveWordFilter sensitiveWordFilter;
 
     /**
      * 流式对话：鉴权后直接驱动 HarnessAgent，返回 {@link AgentSseEvent} 事件流。
@@ -82,6 +83,8 @@ public class AgentProxyService {
         if (!agent.isEnabled()) {
             throw new AgentProxyException("智能体已禁用");
         }
+        // 敏感词拦截：入参消息先过词库，命中直接拒绝
+        sensitiveWordFilter.check(request.getMessage());
         HarnessAgent harnessAgent = agentRegistry.find(agent.getId());
         if (harnessAgent == null) {
             throw new AgentProxyException("智能体实例未注册（可能已删除或重建中）");
