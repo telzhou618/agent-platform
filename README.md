@@ -2,7 +2,7 @@
 
 基于 **AgentScope Java 2.0 + Spring Boot 3 + Vaadin 24 + MySQL + MyBatis-Plus** 的一站式智能体管理平台：模型、智能体、工具、MCP 服务、知识库、技能仓库统一配置，开箱即用的流式对话与数据看板。
 
-![数据看板预览](imgs/img_1.png)
+![数据看板预览](imgs/home.png)
 
 ## 功能特性
 
@@ -18,6 +18,7 @@
 - **ApiKey 管理**（`/apikey`）：开放平台密钥管理
 - **数据存储**（`/state-stores`）：会话状态存储（AgentStateStore）总览——内存 / 本地 JSON 文件 / Redis / MySQL 四种实现，展示配置与实时可用性；每个智能体创建时可独立选择，数据互相隔离
 - **登录与权限**：sa-token 登录认证（会话持久化到 Redis）；多用户数据隔离，普通用户只见自己的资源，管理员看全部；用户管理、操作日志仅管理员可见
+- **健康检查**：`/actuator/health` 及 K8s 探针 `/actuator/health/liveness`、`/actuator/health/readiness`（readiness 汇聚 db/redis 状态，依赖故障时探针失败自动摘流）
 
 ## 技术栈
 

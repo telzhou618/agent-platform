@@ -40,3 +40,16 @@ agent-platform:
     redis-key-prefix: agent-platform:state  # Redis key 前缀（后拼 agent-<id> 隔离）
     # mysql-database: agent_platform        # MySQL 状态库名；默认跟随主数据源库名，无需配置
     mysql-table: agentscope_sessions        # MySQL 共用表（不存在自动创建）
+
+# Actuator 健康检查：/actuator/health；开启 K8s 探针 /actuator/health/liveness 与
+# /actuator/health/readiness（readiness 含 db/redis 组件状态，down 时探针失败摘流）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

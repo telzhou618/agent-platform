@@ -154,6 +154,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- Actuator：健康检查 /actuator/health + K8s liveness/readiness 探针 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- AOP：操作日志切面 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
