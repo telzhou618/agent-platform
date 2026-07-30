@@ -8,17 +8,20 @@ import com.example.agent.proxy.dto.AgentSession;
 import com.example.agent.proxy.dto.ChatRequest;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.system.entity.AgentTokenUsage;
 import com.example.agent.system.entity.ApiKey;
 import com.example.agent.system.entity.SysUser;
 import com.example.agent.system.service.AgentInfoService;
 import com.example.agent.system.service.ApiKeyService;
 import com.example.agent.system.service.ChatRecordService;
 import com.example.agent.system.service.SysUserService;
+import com.example.agent.system.service.TokenUsageService;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEndEvent;
 import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.event.AgentResultEvent;
 import io.agentscope.core.event.AgentStartEvent;
+import io.agentscope.core.event.ModelCallEndEvent;
 import io.agentscope.core.event.TextBlockDeltaEvent;
 import io.agentscope.core.event.ThinkingBlockDeltaEvent;
 import io.agentscope.core.event.ToolCallDeltaEvent;
@@ -63,6 +66,7 @@ public class AgentProxyService {
 
     private final AgentRegistry agentRegistry;
     private final ChatRecordService chatRecordService;
+    private final TokenUsageService tokenUsageService;
     private final ApiKeyService apiKeyService;
     private final AgentInfoService agentInfoService;
     private final SysUserService sysUserService;
@@ -108,6 +112,13 @@ public class AgentProxyService {
         // 每个请求独立的工具参数累积器
         SseConverter converter = new SseConverter();
         Flux<AgentSseEvent> events = harnessAgent.streamEvents(new UserMessage(request.getMessage()), context)
+                // token 埋点：每次模型调用结束（ModelCallEndEvent 携带 usage）异步落一条消耗记录
+                .doOnNext(event -> {
+                    if (event instanceof ModelCallEndEvent end && end.getUsage() != null) {
+                        tokenUsageService.record(agent.getId(), request.getSessionId(), request.getUserId(),
+                                AgentTokenUsage.SOURCE_API, end.getUsage());
+                    }
+                })
                 .flatMap(event -> {
                     if (log.isDebugEnabled()) {
                         log.debug("Agent 流事件：{}", JSON.toJSONString(event));

@@ -1,0 +1,547 @@
+/* ============ Token 监控页（/token-monitor） ============ */
+
+.tm-view {
+    gap: var(--lumo-space-l);
+}
+
+/* ---------- KPI 指标卡：渐变图标 + 悬浮抬升 ---------- */
+
+.tm-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--lumo-space-m);
+    width: 100%;
+}
+
+@media (max-width: 1400px) {
+    .tm-kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    .tm-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.tm-kpi {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m) var(--lumo-space-l);
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tm-kpi:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--lumo-box-shadow-m);
+    border-color: transparent;
+}
+
+/* 悬停时顶部亮起一条与图标同色的渐变线 */
+.tm-kpi::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.tm-kpi:hover::before {
+    opacity: 1;
+}
+
+.tm-kpi-icon {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.tm-kpi-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tm-kpi-value {
+    font-size: var(--lumo-font-size-xxl);
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.tm-kpi-label {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+    white-space: nowrap;
+}
+
+.tm-kpi-sub {
+    max-width: 100%;
+    color: var(--lumo-tertiary-text-color);
+    font-size: var(--lumo-font-size-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 卡片主题色变体：图标渐变 + 顶部渐变线 */
+.tm-kpi-blue .tm-kpi-icon,
+.tm-kpi-blue::before {
+    background: linear-gradient(135deg, #4c6ef5, #748ffc);
+}
+
+.tm-kpi-purple .tm-kpi-icon,
+.tm-kpi-purple::before {
+    background: linear-gradient(135deg, #7048e8, #9775fa);
+}
+
+.tm-kpi-orange .tm-kpi-icon,
+.tm-kpi-orange::before {
+    background: linear-gradient(135deg, #e8590c, #ffa94d);
+}
+
+.tm-kpi-green .tm-kpi-icon,
+.tm-kpi-green::before {
+    background: linear-gradient(135deg, #2f9e44, #51cf66);
+}
+
+.tm-kpi-pink .tm-kpi-icon,
+.tm-kpi-pink::before {
+    background: linear-gradient(135deg, #c2255c, #faa2c1);
+}
+
+.tm-kpi-teal .tm-kpi-icon,
+.tm-kpi-teal::before {
+    background: linear-gradient(135deg, #0c8599, #38d9a9);
+}
+
+/* 缓存命中率区间配色：>=30 绿，10-30 橙，<10 灰 */
+.tm-rate-good {
+    color: var(--lumo-success-text-color);
+}
+
+.tm-rate-warn {
+    color: #e8590c;
+}
+
+.tm-rate-muted {
+    color: var(--lumo-tertiary-text-color);
+}
+
+/* ---------- 面板卡片：白底圆角 + 轻阴影 ---------- */
+
+.tm-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-sizing: border-box;
+    box-shadow: var(--lumo-box-shadow-xs);
+    transition: box-shadow 0.15s ease;
+}
+
+.tm-panel:hover {
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* 面板头：左图标标题，右侧自定义内容（副标题 / 切换按钮 / 过滤器） */
+.tm-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-m);
+}
+
+.tm-panel-head-left {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    min-width: 0;
+}
+
+.tm-panel-icon {
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    color: var(--lumo-primary-color);
+    background: var(--lumo-primary-color-10pct);
+    flex-shrink: 0;
+}
+
+.tm-panel-title {
+    margin: 0;
+    font-size: var(--lumo-font-size-l);
+    white-space: nowrap;
+}
+
+.tm-panel-sub {
+    color: var(--lumo-tertiary-text-color);
+    font-size: var(--lumo-font-size-xs);
+    white-space: nowrap;
+}
+
+/* 空态文案 */
+.tm-empty {
+    width: 100%;
+    color: var(--lumo-secondary-text-color);
+    text-align: center;
+    padding: var(--lumo-space-xl) 0;
+}
+
+/* ---------- 消耗趋势：纯 CSS 堆叠柱图 ---------- */
+
+/* 头部右侧 7 天 / 30 天切换，选中的高亮 */
+.tm-toggle {
+    display: flex;
+    gap: var(--lumo-space-xs);
+    flex-shrink: 0;
+}
+
+.tm-toggle-btn {
+    margin: 0;
+    padding: var(--lumo-space-xs) var(--lumo-space-m);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-m);
+    background: var(--lumo-contrast-5pct);
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.tm-toggle-btn:hover {
+    background: var(--lumo-contrast-10pct);
+}
+
+.tm-toggle-active,
+.tm-toggle-active:hover {
+    background: var(--lumo-primary-color);
+    border-color: var(--lumo-primary-color);
+    color: #fff;
+}
+
+/* 图例行：左侧区间总量，右侧两色图例 */
+.tm-trend-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-s);
+}
+
+.tm-trend-total {
+    color: var(--lumo-tertiary-text-color);
+    font-size: var(--lumo-font-size-xs);
+}
+
+.tm-trend-legend {
+    display: flex;
+    gap: var(--lumo-space-m);
+}
+
+.tm-legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-xs);
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-xs);
+    white-space: nowrap;
+}
+
+.tm-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.tm-legend-dot-in {
+    background: linear-gradient(135deg, #4c6ef5, #748ffc);
+}
+
+.tm-legend-dot-out {
+    background: linear-gradient(135deg, #0c8599, #38d9a9);
+}
+
+.tm-trend-chart {
+    display: flex;
+    gap: var(--lumo-space-xs);
+    height: 220px;
+    padding-top: var(--lumo-space-xs);
+}
+
+/* 全零空态：占满图表区并垂直居中 */
+.tm-trend-chart .tm-empty {
+    flex: 1;
+    align-self: center;
+    padding: 0;
+}
+
+.tm-trend-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tm-trend-count {
+    max-width: 100%;
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tm-trend-bar-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+/* 柱体高度由 Java 端按比例内联；内部上下堆叠：输出（上）+ 输入（下） */
+.tm-trend-bar {
+    width: 60%;
+    max-width: 36px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px 6px 2px 2px;
+    overflow: hidden;
+    transition: filter 0.15s ease;
+    animation: tm-bar-rise 0.5s ease;
+}
+
+.tm-trend-bar:hover {
+    filter: brightness(1.08);
+}
+
+.tm-trend-seg-in {
+    background: linear-gradient(to top, #4c6ef5, #748ffc);
+}
+
+.tm-trend-seg-out {
+    background: linear-gradient(to top, #0c8599, #38d9a9);
+}
+
+/* 今天高亮：主色段换亮紫渐变 + 投影 */
+.tm-trend-bar-today {
+    box-shadow: 0 4px 12px rgba(59, 91, 219, 0.35);
+}
+
+.tm-trend-bar-today .tm-trend-seg-in {
+    background: linear-gradient(to top, #3b5bdb, #9775fa);
+}
+
+@keyframes tm-bar-rise {
+    from {
+        height: 0;
+    }
+}
+
+.tm-trend-label {
+    max-width: 100%;
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+    margin-top: var(--lumo-space-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tm-trend-label-today {
+    color: var(--lumo-primary-color);
+    font-weight: 700;
+}
+
+/* ---------- 智能体消耗排行 ---------- */
+
+.tm-rank-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.tm-rank-row {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    padding: var(--lumo-space-s) var(--lumo-space-xs);
+    border-radius: var(--lumo-border-radius-m);
+    transition: background 0.15s ease;
+}
+
+.tm-rank-row:hover {
+    background: var(--lumo-contrast-5pct);
+}
+
+.tm-rank-row:not(:last-child) {
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* 名次徽标：默认灰，前三金银铜 */
+.tm-rank-no {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: var(--lumo-font-size-s);
+    font-weight: 700;
+    color: var(--lumo-secondary-text-color);
+    background: var(--lumo-contrast-10pct);
+    flex-shrink: 0;
+}
+
+.tm-rank-no-1 {
+    color: #fff;
+    background: linear-gradient(135deg, #f59f00, #ffd43b);
+}
+
+.tm-rank-no-2 {
+    color: #fff;
+    background: linear-gradient(135deg, #868e96, #ced4da);
+}
+
+.tm-rank-no-3 {
+    color: #fff;
+    background: linear-gradient(135deg, #d9480f, #ffa94d);
+}
+
+.tm-rank-row vaadin-avatar {
+    flex-shrink: 0;
+}
+
+.tm-rank-middle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tm-rank-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--lumo-space-s);
+    min-width: 0;
+}
+
+.tm-rank-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-rank-model {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-tertiary-text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 占比进度条：宽度按该行 token / 最大 token 由 Java 端内联 */
+.tm-rank-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--lumo-contrast-10pct);
+    overflow: hidden;
+}
+
+.tm-rank-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #4c6ef5, #9775fa);
+}
+
+.tm-rank-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.tm-rank-tokens {
+    font-size: var(--lumo-font-size-l);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.tm-rank-metrics {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-tertiary-text-color);
+    white-space: nowrap;
+}
+
+/* ---------- 消耗明细 ---------- */
+
+/* 工具行右侧过滤器 */
+.tm-detail-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    flex-shrink: 0;
+}
+
+.tm-grid {
+    width: 100%;
+    height: 460px;
+}
+
+/* 来源徽标：管理端绿 / 开放接口蓝 */
+.tm-badge {
+    display: inline-block;
+    padding: 2px var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    font-size: var(--lumo-font-size-xs);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tm-badge-admin {
+    color: var(--lumo-success-text-color);
+    background: var(--lumo-success-color-10pct);
+}
+
+.tm-badge-api {
+    color: var(--lumo-primary-text-color);
+    background: var(--lumo-primary-color-10pct);
+}
+
+/* 总计列加粗（配合列 classNameGenerator 打在单元格上） */
+.tm-total {
+    font-weight: 700;
+}
+
+/* 会话 ID 截断展示，完整值在 title 悬停 */
+.tm-session {
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+}

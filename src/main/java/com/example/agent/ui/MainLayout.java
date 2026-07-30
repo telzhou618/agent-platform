@@ -13,6 +13,7 @@ import com.example.agent.ui.view.ModelView;
 import com.example.agent.ui.view.OperationLogView;
 import com.example.agent.ui.view.SkillRepoView;
 import com.example.agent.ui.view.StateStoreView;
+import com.example.agent.ui.view.TokenMonitorView;
 import com.example.agent.ui.view.ToolView;
 import com.example.agent.ui.view.UserView;
 import com.vaadin.flow.component.HasElement;
@@ -77,7 +78,8 @@ public class MainLayout extends AppLayout {
 
         addToDrawer(
                 section("概览"),
-                navOf(item("首页", DashboardView.class, VaadinIcon.DASHBOARD)),
+                navOf(item("首页", DashboardView.class, VaadinIcon.DASHBOARD),
+                        item("Token监控", TokenMonitorView.class, VaadinIcon.BAR_CHART)),
                 section("资源管理"),
                 navOf(item("模型管理", ModelView.class, VaadinIcon.DATABASE),
                         item("系统工具", ToolView.class, VaadinIcon.TOOLS),

@@ -6,7 +6,8 @@
 
 ## 功能特性
 
-- **首页数据看板**（`/`）：渐变 Hero + 资源统计、近 7 日对话趋势、对话数据概览、活跃智能体排行、模型可用环图、快捷入口
+- **首页数据看板**（`/`）：渐变 Hero + 资源统计、近 7 日对话趋势、对话数据概览、活跃智能体排行、模型可用环图、Token 消耗摘要、快捷入口
+- **Token 监控**（`/token-monitor`）：每次模型调用的 token 消耗实时埋点——指标卡（今日/累计 token、调用次数、缓存命中率、平均耗时）、7/30 天输入输出堆叠趋势图、智能体消耗排行（占比进度条）、消耗明细分页（按智能体/来源过滤）
 - **模型管理**（`/models`）：CRUD；保存时真实调用验证可用性，支持重新检测；供应商覆盖 DashScope / Kimi / DeepSeek / GLM / MiniMax / OpenAI / Anthropic / Gemini / Ollama / 自定义
 - **智能体管理**（`/agents`）：CRUD + 启用/禁用；每个智能体可挂载系统工具、自定义工具、MCP 服务、知识库、技能仓库；保存前确认弹窗
 - **系统工具**（`/tools`）：扫描 `@Tool` 注解组件自动注册，内置查天气（wttr.in 真实数据）、联网搜索（必应）、查日期，不落库
@@ -95,6 +96,7 @@ java -jar target/agent-platform-1.0.0.jar
 - **系统工具解析**：`ToolService` 在 Spring 单例就绪后扫描所有 Bean，把带 `@Tool` 注解的方法反射注册进 AgentScope `Toolkit`。新增系统工具只需再写一个带 `@Tool` 注解的 `@Component`，重启生效。
 - **技能仓库**：`GitSkillRepository` 克隆远程仓库到本地缓存目录（`localPath` 可指定持久位置），仓库根存在 `skills/` 子目录时优先扫描，只识别直接子目录中符合规范的 `SKILL.md`。
 - **对话统计**：`ChatService` 每轮对话结束异步写入 `chat_record`（工具调用数、耗时、成功与否），看板的趋势/概览/活跃榜全部由它聚合，普通用户只统计自己名下智能体的数据。
+- **Token 消耗统计**（`TokenUsageService`）：管理端 `ChatService` 与开放接口 `AgentProxyService` 在事件流上捕获 `ModelCallEndEvent`（携带 AgentScope `ChatUsage`：输入/输出/缓存 token 与耗时），每次模型调用异步落一条 `agent_token_usage`（source 区分 admin/api），服务商未上报 usage 的调用不落库；监控页的指标卡/趋势/排行/明细全部由它聚合，普通用户只统计自己名下智能体的数据。
 - **开放接口鉴权**（`AgentProxyService`）：`/api/agent/**` 不走管理端登录态，凭请求头 `X-Api-Key` 定位 key 的归属用户，再校验其是否有权访问目标智能体（本人创建或管理员）；会话列表/详情/删除直接读写该智能体的 `AgentStateStore`（`agent_state` key），中断走 `ReActAgent.interrupt(userId, sessionId)` 会话级协作式中断；流式对话独立于管理端 `ChatService`，由 `AgentProxyService` 直接驱动 HarnessAgent，事件逐条转换为 `AgentSseEvent` 后以 `Flux<ServerSentEvent>` 推送——工具入参增量按 toolCallId 累积、在 ToolCallEndEvent 输出完整参数（支持并行工具调用），工具结果增量逐条输出，流内异常以 `event=error` 事件下发；入参消息先经敏感词过滤（houbb sensitive-word 默认词库，`SensitiveWordFilter`），命中即拒绝（400）并返回命中的词。
 - **会话状态存储**（`AgentStateStoreFactory`）：按智能体配置的 `state_store` 类型构建 AgentScope `AgentStateStore` 注入 HarnessAgent——内存（独立实例）、本地 JSON 文件（`workspaces/state/agent-<id>` 子目录）、Redis（每智能体 key 前缀）、MySQL（与主库同库的 `agentscope_sessions` 表，官方 userId:sessionId 寻址），四种实现之间数据互相隔离。
 - **数据权限**：MyBatis 租户插件按当前登录用户自动过滤各表 `user_id`，管理员（`is_admin=1`）不过滤。

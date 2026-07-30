@@ -217,6 +217,30 @@ create table if not exists skills (
     unique key uk_skills_name (name)
 ) engine = innodb comment '技能表（AgentScope MySQL 技能仓库）';
 
+-- ----------------------------
+-- 智能体 token 消耗记录表（每次模型调用落一条，token 监控数据来源）
+-- ----------------------------
+drop table if exists agent_token_usage;
+create table agent_token_usage (
+    id            bigint auto_increment primary key,
+    agent_id      bigint      not null comment '智能体 ID（agent_info.id）',
+    model_name    varchar(128) null comment '模型名称快照（记录时从 agent 关联模型解析）',
+    session_id    varchar(64) not null comment '会话 ID',
+    user_id       varchar(64)  null comment '调用方用户 ID（管理端登录用户 / API 调用方 userId）',
+    source        varchar(16) not null comment '来源：admin 管理端对话，api 开放接口',
+    input_tokens  int         not null default 0 comment '输入 token 数',
+    output_tokens int         not null default 0 comment '输出 token 数',
+    cached_tokens int         not null default 0 comment '缓存命中 token 数（input_tokens 的子集）',
+    total_tokens  int         not null default 0 comment '总 token 数（input + output）',
+    duration_ms   bigint      not null default 0 comment '模型调用耗时（毫秒）',
+    create_time   datetime    null comment '创建时间',
+    update_time   datetime    null comment '更新时间',
+    deleted       tinyint     not null default 0 comment '逻辑删除：0 正常 1 已删除',
+    key idx_agent_id (agent_id),
+    key idx_create_time (create_time),
+    key idx_session_id (session_id)
+) engine = innodb comment '智能体 token 消耗记录表';
+
 create table if not exists agentscope_skill_resources (
     id               bigint       not null,
     resource_path    varchar(500) not null,

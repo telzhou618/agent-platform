@@ -5,9 +5,12 @@ import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import com.example.agent.system.agent.AgentRegistry;
 import com.example.agent.system.auth.LoginHelper;
+import com.example.agent.system.entity.AgentTokenUsage;
 import com.example.agent.system.service.ChatRecordService;
+import com.example.agent.system.service.TokenUsageService;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.ModelCallEndEvent;
 import io.agentscope.core.event.TextBlockDeltaEvent;
 import io.agentscope.core.event.ThinkingBlockDeltaEvent;
 import io.agentscope.core.event.ToolCallDeltaEvent;
@@ -44,6 +47,7 @@ public class ChatService {
     private static final String FALLBACK_USER_ID = "default";
     private final AgentRegistry agentRegistry;
     private final ChatRecordService chatRecordService;
+    private final TokenUsageService tokenUsageService;
 
     /**
      * 生成新会话 ID
@@ -72,28 +76,36 @@ public class ChatService {
             );
             return Flux.just(ChatChunk.of(ChatChunk.Kind.TEXT, JSONUtil.toJsonStr(map)));
         }
+        String userId = currentUserId();
         // mcp 元数据, 会自动传递给下游的 MCP 服务
         McpMeta meta = new McpMeta(Map.of(
-                "userId", currentUserId(),
+                "userId", userId,
                 "sessionId", sessionId,
                 "traceId", IdUtil.fastSimpleUUID()
         ));
 
         RuntimeContext ctx = RuntimeContext.builder()
                 .sessionId(sessionId)
-                .userId(currentUserId())
+                .userId(userId)
                 .put(McpMeta.class, meta)
                 .build();
         // 平台工具均由管理员显式配置，不做人工确认：BYPASS 跳过权限评估。
         // AgentScope 默认对非只读 MCP 工具逐次要求用户授权（HITL），
         // 不设置会导致工具调用挂起、后续对话报 "Agent is paused" 错误。
         agent.setPermissionMode(ctx, PermissionMode.BYPASS);
-        Flux<ChatChunk> chunks = agent.streamEvents(new UserMessage(text), ctx)
-                .flatMap(e -> Mono.justOrEmpty(toChunk(e)));
+        Flux<AgentEvent> events = agent.streamEvents(new UserMessage(text), ctx);
         // 默认智能体（agentId 为空）不属于任何配置，不做统计
         if (agentId == null) {
-            return chunks;
+            return events.flatMap(e -> Mono.justOrEmpty(toChunk(e)));
         }
+        // token 埋点：每次模型调用结束（ModelCallEndEvent 携带 usage）异步落一条消耗记录
+        Flux<AgentEvent> tapped = events.doOnNext(e -> {
+            if (e instanceof ModelCallEndEvent end && end.getUsage() != null) {
+                tokenUsageService.record(agentId, sessionId, userId,
+                        AgentTokenUsage.SOURCE_ADMIN, end.getUsage());
+            }
+        });
+        Flux<ChatChunk> chunks = tapped.flatMap(e -> Mono.justOrEmpty(toChunk(e)));
         return record(sessionId, agentId, chunks);
     }
 

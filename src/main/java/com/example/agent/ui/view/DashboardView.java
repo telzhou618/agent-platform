@@ -5,6 +5,7 @@ import com.example.agent.system.auth.LoginUser;
 import com.example.agent.system.dto.AgentActivityStat;
 import com.example.agent.system.dto.ChatOverviewStat;
 import com.example.agent.system.dto.DailyCount;
+import com.example.agent.system.dto.TokenOverviewStat;
 import com.example.agent.system.service.AgentInfoService;
 import com.example.agent.system.service.ApiKeyService;
 import com.example.agent.system.service.ChatRecordService;
@@ -13,10 +14,12 @@ import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
+import com.example.agent.system.service.TokenUsageService;
 import com.example.agent.system.service.ToolService;
 import com.example.agent.ui.MainLayout;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -56,7 +59,7 @@ public class DashboardView extends VerticalLayout {
                          KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
                          ToolService toolService, CustomToolService customToolService,
                          McpServerService mcpServerService, ApiKeyService apiKeyService,
-                         ChatRecordService chatRecordService) {
+                         ChatRecordService chatRecordService, TokenUsageService tokenUsageService) {
         addClassName("dash-view");
 
         ChatOverviewStat overview = chatRecordService.overview();
@@ -74,6 +77,8 @@ public class DashboardView extends VerticalLayout {
         Div bottom = new Div(rankPanel(chatRecordService.topActiveAgents()), modelPanel(modelConfigService));
         bottom.addClassNames("dash-row", "dash-row-bottom");
         add(bottom);
+
+        add(tokenPanel(tokenUsageService.overview()));
 
         add(quickLinkPanel());
         add(footnote());
@@ -386,6 +391,34 @@ public class DashboardView extends VerticalLayout {
         Div item = new Div(dot, span(label, "dash-legend-label"), span(value, "dash-legend-value"));
         item.addClassName("dash-legend-item");
         return item;
+    }
+
+    // ---------- Token 消耗通栏窄面板 ----------
+
+    /**
+     * token 消耗摘要：4 个紧凑指标 + 右侧「查看详情」跳转监控页；无数据时显示 0 / "—"
+     */
+    private Div tokenPanel(TokenOverviewStat stat) {
+        Div panel = panel("Token 消耗", "每次模型调用实时埋点", VaadinIcon.BAR_CHART);
+        panel.addClassName("dash-panel-token");
+        long rate = stat.getCacheHitRate();
+        Div kpis = new Div(
+                kpi("今日 Token", num(stat.getTodayTokens()), VaadinIcon.COINS, "blue", ""),
+                kpi("累计 Token", num(stat.getTotalTokens()), VaadinIcon.ARCHIVE, "purple", ""),
+                kpi("缓存命中率", rate == 0 ? "—" : rate + "%", VaadinIcon.STORAGE, "green", ""),
+                kpi("今日调用", num(stat.getTodayCalls()), VaadinIcon.BOLT, "orange", ""));
+        kpis.addClassName("dash-token-kpis");
+
+        Button detail = new Button("查看详情", new Icon(VaadinIcon.ANGLE_RIGHT),
+                e -> getUI().ifPresent(ui -> ui.navigate("token-monitor")));
+        detail.setIconAfterText(true);
+        detail.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        detail.addClassName("dash-token-link");
+
+        Div body = new Div(kpis, detail);
+        body.addClassName("dash-token-body");
+        panel.add(body);
+        return panel;
     }
 
     // ---------- 快捷入口 ----------

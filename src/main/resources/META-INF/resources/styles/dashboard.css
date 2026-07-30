@@ -771,3 +771,38 @@
     color: var(--lumo-tertiary-text-color);
     font-size: var(--lumo-font-size-xs);
 }
+
+/* ============ Token 消耗通栏窄面板（首页新增，勿改动上面既有规则） ============ */
+
+/* 通栏：一行 4 个紧凑指标 + 右侧「查看详情」 */
+.dash-panel-token {
+    width: 100%;
+    flex: none;
+}
+
+.dash-token-body {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-l);
+    flex-wrap: wrap;
+}
+
+.dash-token-kpis {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--lumo-space-s);
+    min-width: 520px;
+}
+
+@media (max-width: 900px) {
+    .dash-token-kpis {
+        grid-template-columns: repeat(2, 1fr);
+        min-width: 0;
+    }
+}
+
+.dash-token-link {
+    flex-shrink: 0;
+    margin: 0;
+}
