@@ -3,9 +3,7 @@ package com.example.agent.ui.chat;
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.entity.AgentInfo;
-import com.example.agent.ui.component.AgentAvatar;
 import com.example.agent.ui.component.Notify;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -55,9 +53,6 @@ public class ChatPanel extends VerticalLayout {
         this.chatService = chatService;
         this.agents = agents;
         setSizeFull();
-        setPadding(false);
-        addClassName("chat-panel");
-        getStyle().set("padding", "var(--lumo-space-m)");
 
         agentSelect.setLabel("选择智能体");
         agentSelect.setWidth("240px");
@@ -73,7 +68,6 @@ public class ChatPanel extends VerticalLayout {
         toolbar.setWidthFull();
         toolbar.expand(sessionHint);
         toolbar.setDefaultVerticalComponentAlignment(Alignment.END);
-        toolbar.addClassName("chat-toolbar");
 
         messages.setSpacing(false);
         messages.setPadding(false);
@@ -124,10 +118,8 @@ public class ChatPanel extends VerticalLayout {
         this.currentAgent = agent;
         this.sessionId = chatService.newSessionId();
         messages.removeAll();
-        String name = agent == null ? "全局默认助手" : agent.getName();
         sessionHint.setText("会话 " + sessionId.substring(0, Math.min(8, sessionId.length())));
         sessionHint.setTitle(sessionId);
-        addWelcome(name, agent);
     }
 
     private void send(String text) {
@@ -157,36 +149,18 @@ public class ChatPanel extends VerticalLayout {
     }
 
     /**
-     * 用户消息气泡：靠右主色，带用户头像
+     * 用户消息气泡：浅灰底靠右
      */
     private void addUserBubble(String text) {
         Div bubble = new Div();
         bubble.setText(text);
         bubble.addClassName("user-bubble");
-        Div avatar = new Div();
-        avatar.setText("我");
-        avatar.addClassName("chat-user-avatar");
-        HorizontalLayout row = new HorizontalLayout(bubble, avatar);
+        HorizontalLayout row = new HorizontalLayout(bubble);
         row.setWidthFull();
         row.setPadding(false);
-        row.setAlignItems(Alignment.START);
         row.setJustifyContentMode(JustifyContentMode.END);
         messages.add(row);
         scrollToBottom();
-    }
-
-    /**
-     * 欢迎块：会话开始时展示智能体头像、名称与提示语
-     */
-    private void addWelcome(String name, AgentInfo agent) {
-        Component avatar = AgentAvatar.create(agent == null ? "🤖" : agent.getAvatar(), name, 56);
-        Span welcomeName = new Span(name);
-        welcomeName.addClassName("chat-welcome-name");
-        Span tip = new Span("新会话已开始，快来提问吧");
-        tip.addClassName("chat-welcome-tip");
-        Div welcome = new Div(avatar, welcomeName, tip);
-        welcome.addClassName("chat-welcome");
-        messages.add(welcome);
     }
 
     private void scrollToBottom() {

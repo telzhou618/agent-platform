@@ -150,9 +150,6 @@ class AssistantMessageView extends HorizontalLayout {
         void finish(String state) {
             boolean success = "success".equals(state);
             updateSummary(success ? "成功" : state);
-            if (!success) {
-                addClassName("tool-panel-error");
-            }
             setOpened(false);
         }
 

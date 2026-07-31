@@ -1,105 +1,33 @@
-/* ============ 流式对话：面板、气泡、头像、系统提示 ============ */
+/* ============ 流式对话：后台测试智能体用途，样式从简 ============ */
 
-/* 对话面板：浅灰蓝底，衬托白色与渐变气泡 */
-.chat-panel {
-    background: #f4f6fb;
-}
-
-/* 顶部工具条：白卡 */
-.chat-toolbar {
-    background: var(--lumo-base-color);
-    border: 1px solid var(--lumo-contrast-10pct);
-    border-radius: 12px;
-    padding: var(--lumo-space-xs) var(--lumo-space-m);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-}
-
-/* 会话标识：胶囊徽章 */
+/* 会话标识：小号灰字 */
 .chat-session-badge {
     color: var(--lumo-tertiary-text-color);
     font-size: var(--lumo-font-size-xs);
-    background: var(--lumo-contrast-5pct);
-    border-radius: 999px;
-    padding: 4px 12px;
     white-space: nowrap;
 }
 
-/* 欢迎块：新会话开场 */
-.chat-welcome {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--lumo-space-s);
-    padding: var(--lumo-space-xl) 0 var(--lumo-space-l);
-}
-
-.chat-welcome-name {
-    font-size: var(--lumo-font-size-l);
-    font-weight: 600;
-}
-
-.chat-welcome-tip {
-    color: var(--lumo-tertiary-text-color);
-    font-size: var(--lumo-font-size-s);
-}
-
-/* 用户消息气泡：蓝紫渐变靠右，右下小角 */
+/* 用户消息：浅灰底靠右 */
 .user-bubble {
-    background: linear-gradient(135deg, #4c6ef5, #7048e8);
-    color: #fff;
-    padding: 10px 14px;
-    border-radius: 16px 16px 4px 16px;
+    background: var(--lumo-contrast-5pct);
+    padding: 8px 12px;
+    border-radius: 8px;
     max-width: 75%;
     white-space: pre-wrap;
     word-break: break-word;
-    font-size: var(--lumo-font-size-m);
-    line-height: 1.6;
-    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.28);
 }
 
-/* 用户头像：蓝紫渐变圆形 */
-.chat-user-avatar {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4c6ef5, #7048e8);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--lumo-font-size-s);
-    box-shadow: 0 2px 6px rgba(76, 110, 245, 0.3);
-}
-
-/* 助手 Markdown 气泡：白底细边靠左，左上小角 */
+/* 助手回复：白底细边靠左 */
 .assistant-bubble {
-    background: var(--lumo-base-color);
     border: 1px solid var(--lumo-contrast-10pct);
-    padding: 12px 16px;
-    border-radius: 4px 16px 16px 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
     max-width: 85%;
     align-self: flex-start;
-    font-size: var(--lumo-font-size-m);
-    line-height: 1.7;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
-/* 助手错误提示：浅红胶囊 */
+/* 助手错误提示 */
 .assistant-error {
     color: var(--lumo-error-text-color);
-    background: var(--lumo-error-color-10pct);
-    border-radius: 10px;
-    padding: var(--lumo-space-xs) var(--lumo-space-m);
     font-size: var(--lumo-font-size-s);
-    align-self: flex-start;
-}
-
-/* 系统提示行：居中灰底胶囊 */
-.chat-system-line {
-    color: var(--lumo-tertiary-text-color);
-    font-size: var(--lumo-font-size-xs);
-    background: var(--lumo-contrast-10pct);
-    border-radius: 999px;
-    padding: 4px 14px;
 }

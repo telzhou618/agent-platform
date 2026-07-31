@@ -20,20 +20,15 @@
     line-height: 1.6;
 }
 
-/* 工具调用面板：蓝条白卡；失败红条 */
+/* 工具调用面板：白底细边 */
 .tool-panel {
     max-width: 85%;
     align-self: flex-start;
     background: var(--lumo-base-color);
     border: 1px solid var(--lumo-contrast-10pct);
-    border-left: 3px solid #4c6ef5;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-}
-
-.tool-panel-error {
-    border-left-color: var(--lumo-error-color);
 }
 
 .tool-panel-caption {
