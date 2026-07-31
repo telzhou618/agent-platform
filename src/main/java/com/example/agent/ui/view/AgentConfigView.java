@@ -166,7 +166,7 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
     private Div avatarPreview;
     private TextField avatarUrlField;
     private TextField nameField;
-    private TextField descField;
+    private TextArea descField;
 
     // ---- 模型配置 ----
     private ComboBox<ModelConfig> modelCombo;
@@ -426,10 +426,11 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
             markDirty();
         });
 
-        descField = new TextField("描述");
+        descField = new TextArea("描述");
         descField.setMaxLength(256);
         descField.setWidthFull();
-        descField.setPlaceholder("一句话说明这个智能体能做什么");
+        descField.setMinHeight("5em");
+        descField.setPlaceholder("说明这个智能体的用途、适用场景……");
         descField.setHelperText("展示在智能体列表页，最长 256 字");
         descField.addValueChangeListener(e -> markDirty());
 
