@@ -34,9 +34,15 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 import java.time.Year;
 
 /**
- * 主布局：顶部栏 + 经典管理后台侧边导航
+ * 主布局：顶部栏 + 经典管理后台侧边导航。
+ * 业务样式统一在这里全局加载（AppShellConfigurator 上的 @StyleSheet 在当前环境不生效，
+ * RouterLayout 上的 @StyleSheet 对所有子路由生效）。
  */
 @StyleSheet("context://styles/side-nav.css")
+@StyleSheet("context://styles/app-grid.css")
+@StyleSheet("context://styles/chat.css")
+@StyleSheet("context://styles/markdown.css")
+@StyleSheet("context://styles/agent-panel.css")
 public class MainLayout extends AppLayout {
 
     private final Div footer = new Div();

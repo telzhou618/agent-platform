@@ -1,0 +1,28 @@
+/* ============ 全局 Grid 列表：与数据看板同套白卡规范 ============ */
+
+/* 表格外框：白底卡片 + 细边 + 圆角 + 轻投影 */
+vaadin-grid {
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--lumo-base-color);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+/* 表头：浅灰底 + 加粗灰字，与卡片拉开层次 */
+vaadin-grid::part(header-cell) {
+    background: var(--lumo-contrast-5pct);
+    color: var(--lumo-secondary-text-color);
+    font-weight: 600;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* 数据行悬停：主色淡底，与菜单/看板交互色一致 */
+vaadin-grid::part(body-row):hover {
+    background: var(--lumo-primary-color-10pct);
+}
+
+/* 选中行：主色淡底 */
+vaadin-grid::part(selected-row) {
+    background: var(--lumo-primary-color-10pct);
+}
