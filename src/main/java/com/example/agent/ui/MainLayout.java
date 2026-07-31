@@ -83,6 +83,10 @@ public class MainLayout extends AppLayout {
                 section("概览"),
                 navOf(item("首页", DashboardView.class, VaadinIcon.DASHBOARD),
                         item("Token监控", TokenMonitorView.class, VaadinIcon.BAR_CHART)),
+                section("应用"),
+                navOf(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER),
+                        item("流式对话", ChatView.class, VaadinIcon.CHAT)
+                ),
                 section("资源管理"),
                 navOf(item("模型管理", ModelView.class, VaadinIcon.DATABASE),
                         item("系统工具", ToolView.class, VaadinIcon.TOOLS),
@@ -91,11 +95,7 @@ public class MainLayout extends AppLayout {
                         item("知识库管理", KnowledgeView.class, VaadinIcon.BOOK),
                         item("技能仓库管理", SkillRepoView.class, VaadinIcon.LIGHTBULB),
                         item("数据存储", StateStoreView.class, VaadinIcon.ARCHIVE),
-                        item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY)),
-                section("应用"),
-                navOf(item("智能体管理", AgentView.class, VaadinIcon.CLUSTER),
-                        item("流式对话", ChatView.class, VaadinIcon.CHAT)
-                ));
+                        item("ApiKey管理", ApiKeyView.class, VaadinIcon.KEY)));
         // 用户管理、操作日志仅管理员可见
         if (LoginHelper.isAdmin()) {
             drawerContent.add(section("系统"),
