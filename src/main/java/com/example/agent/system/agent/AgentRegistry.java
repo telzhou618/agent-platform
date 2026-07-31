@@ -8,6 +8,7 @@ import com.example.agent.system.entity.KnowledgeBase;
 import com.example.agent.system.entity.McpServer;
 import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.entity.SkillRepo;
+import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
 import io.agentscope.core.rag.Knowledge;
 import io.agentscope.core.rag.KnowledgeRetrievalTools;
@@ -279,11 +280,16 @@ public class AgentRegistry {
                 .description(StrUtil.nullToEmpty(agent.getDescription()))
                 .sysPrompt(buildSysPrompt(agent))
                 .model(model)
+                // 每智能体级别的生成参数：温度 / Top P / 最大 Token 数
+                .generateOptions(generateOptions(agent))
                 .toolkit(agentToolkit)
                 .agentId("agent-" + agent.getId())
                 .workspace("workspaces/agent-" + agent.getId())
-                // 会话状态存储：按智能体配置选择 memory/jsonfile/redis/mysql，数据互相隔离
-                .stateStore(stateStoreFactory.create(agent.getStateStore(), agent.getId()))
+                // 会话状态存储：按智能体配置选择 memory/jsonfile/redis/mysql，数据互相隔离；
+                // 外层包上下文窗口装饰器，加载会话时把历史裁剪为最近 contextCount 条
+                .stateStore(WindowedStateStore.wrap(
+                        stateStoreFactory.create(agent.getStateStore(), agent.getId()),
+                        agent.getContextCount()))
                 // 关闭 Harness 默认子系统：提示词/工具/技能由平台 DB 管理，
                 // 不注入工作区文件、不开长期记忆、不开子 agent、不读 tools.json
                 .disableWorkspaceContext()
@@ -311,6 +317,22 @@ public class AgentRegistry {
     private String buildSysPrompt(AgentInfo agent) {
         return StrUtil.blankToDefault(agent.getSysPrompt(), DEFAULT_SYS_PROMPT)
                 + "\n" + SYS_PROMPT_SUFFIX;
+    }
+
+    /**
+     * 每智能体级别的生成参数：温度默认 1.0；
+     * Top P / 最大 Token 数未启用（null）时不设置，回退模型默认值
+     */
+    private GenerateOptions generateOptions(AgentInfo agent) {
+        GenerateOptions.Builder options = GenerateOptions.builder()
+                .temperature(agent.getTemperature() == null ? 1.0 : agent.getTemperature());
+        if (agent.getTopP() != null) {
+            options.topP(agent.getTopP());
+        }
+        if (agent.getMaxTokens() != null) {
+            options.maxTokens(agent.getMaxTokens());
+        }
+        return options.build();
     }
 
     private void closeQuietly(List<McpClientWrapper> clients) {

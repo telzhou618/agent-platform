@@ -8,6 +8,7 @@ import com.example.agent.system.service.KnowledgeBaseService;
 import com.example.agent.system.service.McpServerService;
 import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
+import com.example.agent.system.service.TokenUsageService;
 import com.example.agent.system.service.ToolService;
 import com.example.agent.ui.view.DashboardView;
 import org.junit.jupiter.api.Test;
@@ -39,12 +40,14 @@ class DashboardViewTest {
     private ApiKeyService apiKeyService;
     @Autowired
     private ChatRecordService chatRecordService;
+    @Autowired
+    private TokenUsageService tokenUsageService;
 
     @Test
     void dashboardBuildsSuccessfully() {
         DashboardView view = new DashboardView(modelConfigService, agentInfoService, knowledgeBaseService,
                 skillRepoService, toolService, customToolService, mcpServerService, apiKeyService,
-                chatRecordService);
+                chatRecordService, tokenUsageService);
         // Hero + 统计卡 + 趋势/概览行 + 排行/模型行 + 快捷入口 + 脚注
         assertEquals(6, view.getChildren().count());
     }
