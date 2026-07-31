@@ -1,9 +1,11 @@
 /* ============ 左侧菜单：与数据看板同套蓝紫渐变规范 ============ */
 
 /* 抽屉背景：顶部淡蓝紫渐变过渡到白底，呼应 Hero */
+/* overflow: hidden 禁用抽屉自带滚动条，滚动统一交给内部 .drawer-scroll 容器，避免双滚动条 */
 vaadin-app-layout::part(drawer) {
     background: linear-gradient(180deg, #f3f4ff 0%, var(--lumo-base-color) 260px);
     border-right: 1px solid var(--lumo-contrast-10pct);
+    overflow: hidden;
 }
 
 /* 分组小标题：灰字 + 宽字距 */
