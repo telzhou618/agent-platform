@@ -1,7 +1,8 @@
 package com.example.agent.ui.chat;
 
 import com.example.agent.system.chat.ChatChunk;
-import com.vaadin.flow.component.avatar.Avatar;
+import com.example.agent.ui.component.AgentAvatar;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -25,10 +26,8 @@ class AssistantMessageView extends HorizontalLayout {
 
     private ToolCallPanel toolPanel;
 
-    AssistantMessageView(String agentName) {
-        Avatar avatar = new Avatar(agentName);
-        avatar.setAbbreviation(abbr(agentName));
-        avatar.addClassName("chat-avatar");
+    AssistantMessageView(String agentName, String avatarValue) {
+        Component avatar = AgentAvatar.create(avatarValue, agentName, 32);
         content.setPadding(false);
         content.setSpacing(false);
         content.getStyle().set("gap", "var(--lumo-space-xs)");
@@ -38,11 +37,6 @@ class AssistantMessageView extends HorizontalLayout {
         setWidthFull();
         setAlignItems(Alignment.START);
         expand(content);
-    }
-
-    /** 头像缩写：取名称首字符，无名（全局默认助手）用 AI */
-    private static String abbr(String name) {
-        return name == null || name.isBlank() ? "AI" : name.substring(0, 1);
     }
 
     void accept(ChatChunk chunk) {

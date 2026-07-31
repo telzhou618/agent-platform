@@ -1,41 +1,60 @@
 /* ============ Agent 执行过程面板：思考过程、工具调用 ============ */
 
-/* 思考过程折叠面板 */
+/* 思考过程折叠面板：紫条白卡 */
 .thinking-panel {
-    max-width: 80%;
+    max-width: 85%;
     align-self: flex-start;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-left: 3px solid #7048e8;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 .thinking-content {
     white-space: pre-wrap;
+    word-break: break-word;
     color: var(--lumo-secondary-text-color);
     font-size: var(--lumo-font-size-s);
+    line-height: 1.6;
 }
 
-/* 工具调用面板 */
+/* 工具调用面板：蓝条白卡；失败红条 */
 .tool-panel {
-    max-width: 80%;
+    max-width: 85%;
     align-self: flex-start;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-left: 3px solid #4c6ef5;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 .tool-panel-error {
-    color: var(--lumo-error-text-color);
+    border-left-color: var(--lumo-error-color);
 }
 
 .tool-panel-caption {
     display: block;
-    color: var(--lumo-secondary-text-color);
+    color: var(--lumo-tertiary-text-color);
     font-size: var(--lumo-font-size-xxs);
-    margin-bottom: 2px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
 }
 
 .tool-panel-pre {
     white-space: pre-wrap;
     word-break: break-all;
+    font-family: var(--vaadin-font-family-monospace, "JetBrains Mono", Consolas, monospace);
     font-size: var(--lumo-font-size-xs);
-    background: var(--lumo-contrast-5pct);
+    line-height: 1.6;
+    background: #f6f8fc;
+    border: 1px solid var(--lumo-contrast-10pct);
     padding: var(--lumo-space-xs) var(--lumo-space-s);
-    border-radius: var(--lumo-border-radius-m);
+    border-radius: 8px;
     margin-bottom: var(--lumo-space-xs);
     max-height: 160px;
     overflow: auto;

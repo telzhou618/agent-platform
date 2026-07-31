@@ -3,9 +3,10 @@ package com.example.agent.ui.chat;
 import cn.hutool.core.util.StrUtil;
 import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.entity.AgentInfo;
+import com.example.agent.ui.component.AgentAvatar;
 import com.example.agent.ui.component.Notify;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -55,6 +56,8 @@ public class ChatPanel extends VerticalLayout {
         this.agents = agents;
         setSizeFull();
         setPadding(false);
+        addClassName("chat-panel");
+        getStyle().set("padding", "var(--lumo-space-m)");
 
         agentSelect.setLabel("选择智能体");
         agentSelect.setWidth("240px");
@@ -65,13 +68,12 @@ public class ChatPanel extends VerticalLayout {
                 e -> startSession(agentSelect.getValue()));
         newSession.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
 
-        sessionHint.getStyle()
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-xs)");
+        sessionHint.addClassName("chat-session-badge");
         HorizontalLayout toolbar = new HorizontalLayout(agentSelect, newSession, sessionHint);
         toolbar.setWidthFull();
         toolbar.expand(sessionHint);
         toolbar.setDefaultVerticalComponentAlignment(Alignment.END);
+        toolbar.addClassName("chat-toolbar");
 
         messages.setSpacing(false);
         messages.setPadding(false);
@@ -123,8 +125,9 @@ public class ChatPanel extends VerticalLayout {
         this.sessionId = chatService.newSessionId();
         messages.removeAll();
         String name = agent == null ? "全局默认助手" : agent.getName();
-        sessionHint.setText("sessionId: " + sessionId);
-        addSystemLine("已切换到「" + name + "」，新会话已开始");
+        sessionHint.setText("会话 " + sessionId.substring(0, Math.min(8, sessionId.length())));
+        sessionHint.setTitle(sessionId);
+        addWelcome(name, agent);
     }
 
     private void send(String text) {
@@ -133,7 +136,8 @@ public class ChatPanel extends VerticalLayout {
         }
         addUserBubble(text);
         String agentName = currentAgent == null ? "AI" : currentAgent.getName();
-        AssistantMessageView reply = new AssistantMessageView(agentName);
+        AssistantMessageView reply = new AssistantMessageView(agentName,
+                currentAgent == null ? "🤖" : currentAgent.getAvatar());
         messages.add(reply);
         scrollToBottom();
         UI ui = UI.getCurrent();
@@ -159,8 +163,9 @@ public class ChatPanel extends VerticalLayout {
         Div bubble = new Div();
         bubble.setText(text);
         bubble.addClassName("user-bubble");
-        Avatar avatar = new Avatar("我");
-        avatar.addClassName("chat-avatar");
+        Div avatar = new Div();
+        avatar.setText("我");
+        avatar.addClassName("chat-user-avatar");
         HorizontalLayout row = new HorizontalLayout(bubble, avatar);
         row.setWidthFull();
         row.setPadding(false);
@@ -171,19 +176,17 @@ public class ChatPanel extends VerticalLayout {
     }
 
     /**
-     * 系统提示行：居中灰色小字
+     * 欢迎块：会话开始时展示智能体头像、名称与提示语
      */
-    private void addSystemLine(String text) {
-        Span line = new Span(text);
-        line.getStyle()
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-xs)");
-        HorizontalLayout row = new HorizontalLayout(line);
-        row.setWidthFull();
-        row.setPadding(false);
-        row.setJustifyContentMode(JustifyContentMode.CENTER);
-        messages.add(row);
-        scrollToBottom();
+    private void addWelcome(String name, AgentInfo agent) {
+        Component avatar = AgentAvatar.create(agent == null ? "🤖" : agent.getAvatar(), name, 56);
+        Span welcomeName = new Span(name);
+        welcomeName.addClassName("chat-welcome-name");
+        Span tip = new Span("新会话已开始，快来提问吧");
+        tip.addClassName("chat-welcome-tip");
+        Div welcome = new Div(avatar, welcomeName, tip);
+        welcome.addClassName("chat-welcome");
+        messages.add(welcome);
     }
 
     private void scrollToBottom() {
