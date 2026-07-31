@@ -56,10 +56,9 @@
     transition: color 0.18s ease, background-color 0.18s ease;
 }
 
+/* 悬停：浅灰底，比选中态更弱一级 */
 .ac-menu-item:not(.ac-selected):hover {
-    background-color: var(--lumo-primary-color-10pct);
-    color: var(--lumo-primary-text-color);
-    transform: translateX(2px);
+    background-color: var(--lumo-contrast-5pct);
 }
 
 .ac-menu-item:not(.ac-selected):hover vaadin-icon {
@@ -67,16 +66,16 @@
     background: var(--lumo-primary-color-10pct);
 }
 
+/* 选中项：弱化处理，淡主色底 + 主色文字，区别于主菜单的渐变高亮 */
 .ac-menu-item.ac-selected {
-    background: linear-gradient(135deg, #4c6ef5, #7048e8);
-    color: #fff;
+    background: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.35);
 }
 
 .ac-menu-item.ac-selected vaadin-icon {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.22);
+    color: var(--lumo-primary-color);
+    background: var(--lumo-primary-color-10pct);
 }
 
 .ac-save {
