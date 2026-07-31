@@ -69,3 +69,34 @@ vaadin-side-nav-item[current] vaadin-icon {
     color: #fff;
     background: rgba(255, 255, 255, 0.22);
 }
+
+/* 抽屉滚动容器：滚动条默认隐藏，鼠标悬停菜单时才显示 */
+.drawer-scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Firefox：默认隐藏，悬停时显示细滚动条 */
+    scrollbar-width: none;
+}
+
+.drawer-scroll:hover {
+    scrollbar-width: thin;
+}
+
+/* WebKit：滚动条常驻占位但滑块默认透明，悬停时才上色（避免宽度抖动） */
+.drawer-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.drawer-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.drawer-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+}
+
+.drawer-scroll:hover::-webkit-scrollbar-thumb {
+    background: var(--lumo-contrast-30pct);
+}

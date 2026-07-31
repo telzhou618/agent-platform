@@ -76,7 +76,10 @@ public class MainLayout extends AppLayout {
         }
         addToNavbar(header);
 
-        addToDrawer(
+        // 抽屉内容包一层滚动容器：滚动条默认隐藏，鼠标悬停菜单时才显示
+        Div drawerContent = new Div();
+        drawerContent.addClassName("drawer-scroll");
+        drawerContent.add(
                 section("概览"),
                 navOf(item("首页", DashboardView.class, VaadinIcon.DASHBOARD),
                         item("Token监控", TokenMonitorView.class, VaadinIcon.BAR_CHART)),
@@ -95,10 +98,11 @@ public class MainLayout extends AppLayout {
                 ));
         // 用户管理、操作日志仅管理员可见
         if (LoginHelper.isAdmin()) {
-            addToDrawer(section("系统"),
+            drawerContent.add(section("系统"),
                     navOf(item("用户管理", UserView.class, VaadinIcon.USERS),
                             item("操作日志", OperationLogView.class, VaadinIcon.CLIPBOARD_TEXT)));
         }
+        addToDrawer(drawerContent);
 
         // 主内容区底部居中的版权信息
         Span copyright = new Span("Copyright © " + Year.now().getValue() + " agent-platform 版权所有");
