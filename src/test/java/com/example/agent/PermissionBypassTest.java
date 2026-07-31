@@ -37,8 +37,8 @@ class PermissionBypassTest {
 
     @BeforeAll
     static void requireApiKey() {
-        Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("YOKA_DASHSCOPE_API_KEY")),
-                "未设置 YOKA_DASHSCOPE_API_KEY，跳过端到端测试");
+        Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("DASHSCOPE_API_KEY")),
+                "未设置 DASHSCOPE_API_KEY，跳过端到端测试");
     }
 
     /** 总是要求人工确认的工具 */

@@ -21,13 +21,13 @@ import org.springframework.context.annotation.Configuration;
 public class AgentScopeConfig {
 
     /**
-     * 全局默认模型：DashScope qwen-flash，apiKey 取环境变量 YOKA_DASHSCOPE_API_KEY
+     * 全局默认模型：DashScope qwen-flash，apiKey 取环境变量 DASHSCOPE_API_KEY
      */
     @Bean
     public Model defaultModel() {
-        String apiKey = System.getenv("YOKA_DASHSCOPE_API_KEY");
+        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         if (StrUtil.isBlank(apiKey)) {
-            log.warn("环境变量 YOKA_DASHSCOPE_API_KEY 未设置，全局默认模型 qwen-flash 将无法调用");
+            log.warn("环境变量 DASHSCOPE_API_KEY 未设置，全局默认模型 qwen-flash 将无法调用");
         }
         return DashScopeChatModel.builder()
                 .apiKey(apiKey)

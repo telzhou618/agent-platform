@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 流式对话端到端测试：真实调用 DashScope（需要环境变量 YOKA_DASHSCOPE_API_KEY 和本地 MySQL）。
+ * 流式对话端到端测试：真实调用 DashScope（需要环境变量 DASHSCOPE_API_KEY 和本地 MySQL）。
  * 验证动态模型加载、工具调用、会话记忆隔离。
  */
 @SpringBootTest
@@ -34,8 +34,8 @@ class ChatServiceTest {
 
     @BeforeAll
     static void requireApiKey() {
-        Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("YOKA_DASHSCOPE_API_KEY")),
-                "未设置 YOKA_DASHSCOPE_API_KEY，跳过端到端测试");
+        Assumptions.assumeTrue(StrUtil.isNotBlank(System.getenv("DASHSCOPE_API_KEY")),
+                "未设置 DASHSCOPE_API_KEY，跳过端到端测试");
     }
 
     /** 启动注册：agent_info 表中的智能体应已注册为容器中的 ReActAgent 实例 */

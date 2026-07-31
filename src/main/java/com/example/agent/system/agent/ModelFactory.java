@@ -95,8 +95,8 @@ public class ModelFactory {
     }
 
     private Model buildDashScope(ModelConfig config) {
-        // apiKey 留空时回退平台默认的 YOKA_DASHSCOPE_API_KEY，让种子模型开箱即用
-        String apiKey = StrUtil.blankToDefault(config.getApiKey(), System.getenv("YOKA_DASHSCOPE_API_KEY"));
+        // apiKey 留空时回退平台默认的 DASHSCOPE_API_KEY，让种子模型开箱即用
+        String apiKey = StrUtil.blankToDefault(config.getApiKey(), System.getenv("DASHSCOPE_API_KEY"));
         DashScopeChatModel.Builder builder = DashScopeChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(config.getModel())
