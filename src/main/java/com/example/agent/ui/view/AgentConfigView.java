@@ -26,7 +26,6 @@ import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.StyleSheet;
@@ -44,6 +43,8 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
@@ -692,13 +693,16 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
         return row;
     }
 
-    /** 添加选择器弹窗：只列未配置的，多选后并入（支持全选/清空） */
+    /**
+     * 添加选择器弹窗：只列未配置的；卡片式条目（点击整行勾选）、
+     * 支持按名称/摘要搜索、全选/清空，底部实时显示已选数量。
+     */
     private <T, K> void openPicker(String title, List<T> allItems, Function<T, K> keyFn,
                                    Function<T, String> nameFn, Function<T, String> subFn,
                                    Set<K> selected, Runnable after) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("添加" + title);
-        dialog.setWidth("560px");
+        dialog.setWidth("620px");
 
         List<T> available = allItems.stream()
                 .filter(item -> !selected.contains(keyFn.apply(item)))
@@ -708,35 +712,131 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
             dialog.open();
             return;
         }
-        CheckboxGroup<T> group = new CheckboxGroup<>();
-        group.setItems(available);
-        group.setItemLabelGenerator(item -> {
-            String sub = subFn.apply(item);
-            return StrUtil.isBlank(sub) ? nameFn.apply(item) : nameFn.apply(item) + "（" + sub + "）";
-        });
-        group.addClassName("ac-picker-group");
 
-        Button selectAll = new Button("全选", e -> group.setValue(new LinkedHashSet<>(available)));
+        Set<T> chosen = new LinkedHashSet<>();
+
+        // 工具栏：搜索 + 全选/清空
+        TextField search = new TextField();
+        search.setPlaceholder("搜索名称 / 描述");
+        search.setClearButtonVisible(true);
+        search.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
+        search.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        search.setValueChangeMode(ValueChangeMode.LAZY);
+        search.setWidthFull();
+
+        Div list = new Div();
+        list.addClassName("ac-picker-list");
+
+        Span chosenCount = new Span("已选 0 项");
+        chosenCount.addClassName("ac-picker-count");
+
+        Button ok = new Button("添加");
+        ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        ok.setEnabled(false);
+
+        // 仅刷新计数与按钮（行内勾选时调用，不重建列表以保留滚动位置）
+        Runnable refreshCounts = () -> {
+            chosenCount.setText("已选 " + chosen.size() + " 项");
+            ok.setEnabled(!chosen.isEmpty());
+            ok.setText(chosen.isEmpty() ? "添加" : "添加（" + chosen.size() + "）");
+        };
+
+        // 按搜索关键字重建可见行
+        Runnable render = () -> {
+            String kw = StrUtil.trimToEmpty(search.getValue()).toLowerCase();
+            list.removeAll();
+            List<T> visible = available.stream()
+                    .filter(item -> StrUtil.isBlank(kw)
+                            || nameFn.apply(item).toLowerCase().contains(kw)
+                            || StrUtil.nullToEmpty(subFn.apply(item)).toLowerCase().contains(kw))
+                    .toList();
+            if (visible.isEmpty()) {
+                Div empty = new Div(new Span("无匹配项"));
+                empty.addClassName("ac-rel-empty");
+                list.add(empty);
+                return;
+            }
+            for (T item : visible) {
+                list.add(pickerRow(item, nameFn, subFn, chosen, refreshCounts));
+            }
+        };
+        // 全选/清空后重建列表并刷新计数
+        Runnable refreshAll = () -> {
+            render.run();
+            refreshCounts.run();
+        };
+
+        search.addValueChangeListener(e -> render.run());
+
+        Button selectAll = new Button("全选", e -> {
+            chosen.addAll(available);
+            refreshAll.run();
+        });
         selectAll.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-        Button clear = new Button("清空", e -> group.clear());
+        Button clear = new Button("清空", e -> {
+            chosen.clear();
+            refreshAll.run();
+        });
         clear.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-        HorizontalLayout batch = new HorizontalLayout(selectAll, clear);
-        batch.setPadding(false);
+
+        HorizontalLayout toolbar = new HorizontalLayout(search, selectAll, clear);
+        toolbar.addClassName("ac-picker-toolbar");
+        toolbar.setWidthFull();
+        toolbar.expand(search);
+        toolbar.setDefaultVerticalComponentAlignment(Alignment.CENTER);
 
         Button cancel = new Button("取消", e -> dialog.close());
-        Button ok = new Button("添加", e -> {
-            Set<T> chosen = group.getValue();
-            if (!chosen.isEmpty()) {
-                chosen.forEach(item -> selected.add(keyFn.apply(item)));
-                markDirty();
-                after.run();
-            }
+        ok.addClickListener(e -> {
+            chosen.forEach(item -> selected.add(keyFn.apply(item)));
+            markDirty();
+            after.run();
             dialog.close();
         });
-        ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        dialog.add(batch, group);
-        dialog.getFooter().add(cancel, ok);
+
+        render.run();
+
+        dialog.add(toolbar, list);
+        dialog.getFooter().add(chosenCount, cancel, ok);
         dialog.open();
+    }
+
+    /** 选择器条目卡片：名称 + 摘要 + 选中指示圈，点击整行切换选中 */
+    private <T> Div pickerRow(T item, Function<T, String> nameFn, Function<T, String> subFn,
+                              Set<T> chosen, Runnable onToggle) {
+        Span name = new Span(nameFn.apply(item));
+        name.addClassName("ac-rel-row-name");
+        Div text = new Div(name);
+        text.addClassName("ac-picker-item-text");
+        String sub = subFn.apply(item);
+        if (StrUtil.isNotBlank(sub)) {
+            Span subSpan = new Span(sub);
+            subSpan.addClassName("ac-rel-row-sub");
+            text.add(subSpan);
+        }
+        Icon checkIcon = new Icon(VaadinIcon.CHECK);
+        Div indicator = new Div(checkIcon);
+        indicator.addClassName("ac-picker-check");
+        Div row = new Div(text, indicator);
+        row.addClassName("ac-picker-item");
+        if (chosen.contains(item)) {
+            row.addClassName("ac-selected");
+        }
+        row.addClickListener(e -> {
+            boolean nowSelected;
+            if (chosen.remove(item)) {
+                nowSelected = false;
+            } else {
+                chosen.add(item);
+                nowSelected = true;
+            }
+            if (nowSelected) {
+                row.addClassName("ac-selected");
+            } else {
+                row.removeClassName("ac-selected");
+            }
+            onToggle.run();
+        });
+        return row;
     }
 
     // ==================== 分区八：存储配置 ====================
