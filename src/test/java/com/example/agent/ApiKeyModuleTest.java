@@ -67,12 +67,25 @@ class ApiKeyModuleTest {
         assertThrows(IllegalStateException.class, () -> apiKeyService.deleteApiKey(-999L));
     }
 
-    /** 编辑不存在（或无权限）的记录显式报错 */
+    /** 启用/禁用切换：状态落库生效 */
     @Test
-    void editNonExistentThrows() {
+    void toggleStatus() {
         ApiKey key = new ApiKey();
-        key.setId(-999L);
-        key.setName("不存在的记录");
-        assertThrows(IllegalStateException.class, () -> apiKeyService.saveApiKey(key));
+        key.setName("状态切换测试Key");
+        apiKeyService.saveApiKey(key);
+
+        apiKeyService.updateStatus(key.getId(), 0);
+        assertEquals(0, apiKeyService.getById(key.getId()).getStatus(), "禁用后状态应为 0");
+
+        apiKeyService.updateStatus(key.getId(), 1);
+        assertEquals(1, apiKeyService.getById(key.getId()).getStatus(), "启用后状态应为 1");
+
+        apiKeyService.deleteApiKey(key.getId());
+    }
+
+    /** 切换不存在（或无权限）的记录状态显式报错 */
+    @Test
+    void toggleNonExistentThrows() {
+        assertThrows(IllegalStateException.class, () -> apiKeyService.updateStatus(-999L, 0));
     }
 }

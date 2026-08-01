@@ -56,7 +56,7 @@ public class ApiKeyView extends VerticalLayout {
         keyword.addKeyPressListener(Key.ENTER, e -> paginationBar.reset());
         Button search = new Button("搜索", e -> paginationBar.reset());
         search.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        Button add = new Button("新增 ApiKey", new Icon(VaadinIcon.PLUS), e -> openDialog(new ApiKey()));
+        Button add = new Button("新增 ApiKey", new Icon(VaadinIcon.PLUS), e -> openCreateDialog());
         add.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         HorizontalLayout toolbar = new HorizontalLayout(title, keyword, search, add);
         toolbar.setWidthFull();
@@ -107,11 +107,24 @@ public class ApiKeyView extends VerticalLayout {
     }
 
     private Component actionButtons(ApiKey key) {
-        Button edit = new Button("编辑", e -> openDialog(key));
-        edit.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        boolean enabled = Integer.valueOf(1).equals(key.getStatus());
+        Button toggle = new Button(enabled ? "禁用" : "启用", e -> toggleStatus(key));
+        toggle.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button("删除", e -> confirmDelete(key));
         delete.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        return new HorizontalLayout(edit, delete);
+        return new HorizontalLayout(toggle, delete);
+    }
+
+    /** 启用/禁用切换：禁用后开放接口立即拒绝该 Key */
+    private void toggleStatus(ApiKey key) {
+        boolean enable = !Integer.valueOf(1).equals(key.getStatus());
+        try {
+            apiKeyService.updateStatus(key.getId(), enable ? 1 : 0);
+            refresh();
+            Notify.success(enable ? "已启用" : "已禁用");
+        } catch (Exception ex) {
+            Notify.error(ex.getMessage());
+        }
     }
 
     private void refresh() {
@@ -124,11 +137,11 @@ public class ApiKeyView extends VerticalLayout {
         paginationBar.setTotal(result.getTotal());
     }
 
-    /** 新增 / 编辑对话框：Key 值由服务端生成不可改，表单只维护名称 / 状态 / 备注 */
-    private void openDialog(ApiKey key) {
-        boolean isNew = key.getId() == null;
+    /** 新增对话框：Key 值由服务端生成不可改，表单只维护名称 / 状态 / 备注 */
+    private void openCreateDialog() {
+        ApiKey key = new ApiKey();
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle(isNew ? "新增 ApiKey" : "编辑 ApiKey");
+        dialog.setHeaderTitle("新增 ApiKey");
         dialog.setWidth("480px");
 
         TextField name = new TextField("名称");
@@ -147,22 +160,12 @@ public class ApiKeyView extends VerticalLayout {
         name.setRequiredIndicatorVisible(true);
 
         // 新增默认启用：默认值写在 bean 上，readBean 会同步到字段
-        if (isNew) {
-            key.setStatus(1);
-        }
+        key.setStatus(1);
         binder.readBean(key);
 
         FormLayout form = new FormLayout(name, enabled, remark);
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
         dialog.add(form);
-        // 编辑时展示 Key（只读 + 脱敏）
-        if (!isNew) {
-            TextField keyValue = new TextField("ApiKey");
-            keyValue.setValue(mask(key.getApiKey()));
-            keyValue.setReadOnly(true);
-            keyValue.setWidthFull();
-            dialog.add(keyValue);
-        }
 
         Button cancel = new Button("取消", e -> dialog.close());
         Button save = new Button("保存", e -> {

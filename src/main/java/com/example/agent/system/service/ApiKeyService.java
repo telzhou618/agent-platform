@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * ApiKey 管理。数据权限由租户拦截器保证：普通用户只能读写自己的 Key，管理员看全部；
- * 编辑/删除前再做一次显式校验，防止越权请求静默成功。
+ * 状态切换/删除前再做一次显式校验，防止越权请求静默成功。
  */
 @Service
 public class ApiKeyService extends ServiceImpl<ApiKeyMapper, ApiKey> {
@@ -28,7 +28,7 @@ public class ApiKeyService extends ServiceImpl<ApiKeyMapper, ApiKey> {
                 .page(new Page<>(page, size));
     }
 
-    /** 保存 ApiKey：新增时服务端生成 Key 值；编辑时 Key 值不可改，只更新名称/状态/备注 */
+    /** 创建 ApiKey：Key 值由服务端生成，未指定状态时默认启用 */
     @OperationLog(module = "ApiKey管理", action = "保存", summary = "#apiKey.name")
     public void saveApiKey(ApiKey apiKey) {
         if (StrUtil.isBlank(apiKey.getName())) {
@@ -37,19 +37,18 @@ public class ApiKeyService extends ServiceImpl<ApiKeyMapper, ApiKey> {
         if (apiKey.getStatus() == null) {
             apiKey.setStatus(1);
         }
-        if (apiKey.getId() == null) {
-            apiKey.setApiKey(KEY_PREFIX + IdUtil.fastSimpleUUID());
-            save(apiKey);
-            return;
-        }
-        // getById 走租户过滤，非本人记录返回 null，显式拦截越权编辑
-        ApiKey existing = getById(apiKey.getId());
+        apiKey.setApiKey(KEY_PREFIX + IdUtil.fastSimpleUUID());
+        save(apiKey);
+    }
+
+    /** 启用/禁用 ApiKey：非本人记录被租户过滤返回 null，显式报错防止静默成功 */
+    @OperationLog(module = "ApiKey管理", action = "切换状态", summary = "#id")
+    public void updateStatus(Long id, int status) {
+        ApiKey existing = getById(id);
         if (existing == null) {
             throw new IllegalStateException("ApiKey 不存在或无权操作");
         }
-        existing.setName(apiKey.getName());
-        existing.setStatus(apiKey.getStatus());
-        existing.setRemark(apiKey.getRemark());
+        existing.setStatus(status);
         updateById(existing);
     }
 
