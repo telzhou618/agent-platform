@@ -985,31 +985,33 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
     private void confirmSave() {
         Dialog confirm = new Dialog();
         confirm.setHeaderTitle(isNew ? "确认创建智能体" : "确认保存修改");
-        confirm.setWidth("480px");
+        confirm.setWidth("520px");
+        confirm.setMaxHeight("80vh");
 
-        VerticalLayout summary = new VerticalLayout();
-        summary.setPadding(false);
-        summary.setSpacing(false);
-        summary.getStyle().set("gap", "var(--lumo-space-xs)");
-        addSummaryLine(summary, "名称", agent.getName());
-        addSummaryLine(summary, "头像", StrUtil.isBlank(agent.getAvatar()) ? "未设置"
-                : AgentAvatar.isImageUrl(agent.getAvatar()) ? "图片 URL" : agent.getAvatar());
         ModelConfig model = modelCombo.getValue();
-        addSummaryLine(summary, "模型", model.getName() + "（" + model.getModel() + "）");
-        addSummaryLine(summary, "模型温度", String.valueOf(agent.getTemperature()));
-        addSummaryLine(summary, "上下文数", agent.getContextCount() + " 条");
-        addSummaryLine(summary, "Top P", agent.getTopP() == null ? "未启用" : String.valueOf(agent.getTopP()));
-        addSummaryLine(summary, "最大 Token", agent.getMaxTokens() == null ? "未启用" : agent.getMaxTokens() + "");
-        addSummaryLine(summary, "状态存储", STATE_STORE_NAMES.getOrDefault(agent.getStateStore(), "-"));
-        addSummaryLine(summary, "系统工具", summarize(selectedToolNames, Function.identity()));
-        addSummaryLine(summary, "自定义工具", summarizeIds(selectedCustomToolIds, customToolNames));
-        addSummaryLine(summary, "MCP服务", summarizeIds(selectedMcpIds, mcpServerNames));
-        addSummaryLine(summary, "知识库", summarizeIds(selectedKbIds, knowledgeBaseNames));
-        addSummaryLine(summary, "技能仓库", summarizeIds(selectedSkillRepoIds, skillRepoNames));
+        String avatarText = StrUtil.isBlank(agent.getAvatar()) ? ""
+                : AgentAvatar.isImageUrl(agent.getAvatar()) ? "（图片头像）" : "（" + agent.getAvatar() + "）";
+        String modelParams = "温度 " + agent.getTemperature()
+                + " · 上下文 " + agent.getContextCount() + " 条"
+                + " · TopP " + (agent.getTopP() == null ? "默认" : agent.getTopP())
+                + " · 最大Token " + (agent.getMaxTokens() == null ? "默认" : agent.getMaxTokens());
+
+        Div summary = new Div();
+        summary.addClassName("ac-summary");
+        addSummaryRow(summary, "名称", agent.getName() + avatarText);
+        addSummaryRow(summary, "模型", model.getName() + "（" + model.getModel() + "）");
+        addSummaryRow(summary, "模型参数", modelParams);
+        addSummaryRow(summary, "状态存储", STATE_STORE_NAMES.getOrDefault(agent.getStateStore(), "-"));
+        addSummaryRow(summary, "系统工具", summarize(selectedToolNames, Function.identity()));
+        addSummaryRow(summary, "自定义工具", summarizeIds(selectedCustomToolIds, customToolNames));
+        addSummaryRow(summary, "MCP服务", summarizeIds(selectedMcpIds, mcpServerNames));
+        addSummaryRow(summary, "知识库", summarizeIds(selectedKbIds, knowledgeBaseNames));
+        addSummaryRow(summary, "技能仓库", summarizeIds(selectedSkillRepoIds, skillRepoNames));
 
         Paragraph hint = new Paragraph("保存后将立即注册/重建智能体实例，请确认以上信息完整无误。");
         hint.getStyle().set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-s)");
+                .set("font-size", "var(--lumo-font-size-s)")
+                .set("margin-bottom", "0");
         confirm.add(summary, hint);
 
         Button back = new Button("返回修改", e -> confirm.close());
@@ -1035,14 +1037,13 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
         confirm.open();
     }
 
-    /** 摘要区一行：加粗标签 + 值 */
-    private void addSummaryLine(VerticalLayout layout, String label, String value) {
-        Paragraph line = new Paragraph();
-        line.getStyle().set("margin", "0");
-        Span labelSpan = new Span(label + "：");
-        labelSpan.getStyle().set("font-weight", "600");
-        line.add(labelSpan, new Span(StrUtil.nullToDefault(value, "-")));
-        layout.add(line);
+    /** 摘要区一行：灰色标签 + 值（CSS 网格对齐） */
+    private void addSummaryRow(Div summary, String label, String value) {
+        Span labelSpan = new Span(label);
+        labelSpan.addClassName("ac-summary-label");
+        Span valueSpan = new Span(StrUtil.nullToDefault(value, "-"));
+        valueSpan.addClassName("ac-summary-value");
+        summary.add(labelSpan, valueSpan);
     }
 
     // ==================== 通用辅助 ====================
@@ -1119,13 +1120,14 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
         return StrUtil.isBlank(json) ? List.of() : JSONUtil.toList(json, Long.class);
     }
 
-    /** 多选集合 -> 「名称1、名称2（共 n 个）」，空集合显示「无」 */
+    /** 多选集合 -> 「名称1、名称2、名称3 等（共 n 个）」，超过 3 个截断，空集合显示「无」 */
     private <T> String summarize(Set<T> items, Function<T, String> nameFn) {
         if (CollUtil.isEmpty(items)) {
             return "无";
         }
-        List<String> names = items.stream().map(nameFn).toList();
-        return String.join("、", names) + "（共 " + items.size() + " 个）";
+        List<String> names = items.stream().map(nameFn).limit(3).toList();
+        String joined = String.join("、", names);
+        return (items.size() > 3 ? joined + " 等" : joined) + "（共 " + items.size() + " 个）";
     }
 
     /** ID 集合 -> 名称摘要（ID 已被删除时显示 ID:x） */

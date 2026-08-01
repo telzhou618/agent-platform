@@ -142,6 +142,22 @@
     color: var(--lumo-secondary-text-color);
 }
 
+/* 保存确认弹窗：配置摘要（标签-值两列网格） */
+.ac-summary {
+    display: grid;
+    grid-template-columns: 5.5em 1fr;
+    gap: var(--lumo-space-xs) var(--lumo-space-m);
+    font-size: var(--lumo-font-size-s);
+}
+
+.ac-summary-label {
+    color: var(--lumo-secondary-text-color);
+}
+
+.ac-summary-value {
+    word-break: break-all;
+}
+
 .ac-fields {
     display: flex;
     flex-direction: column;
