@@ -20,6 +20,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -172,13 +173,47 @@ public class ApiKeyView extends VerticalLayout {
                 apiKeyService.saveApiKey(key);
                 dialog.close();
                 refresh();
-                Notify.success(isNew ? "创建成功，请在列表复制 ApiKey" : "保存成功");
+                showKeyDialog(key);
             } catch (Exception ex) {
                 Notify.error(ex.getMessage());
             }
         });
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         dialog.getFooter().add(cancel, save);
+        dialog.open();
+    }
+
+    /**
+     * 保存成功后的 Key 回显弹窗：展示完整 ApiKey 并支持一键复制
+     * （列表与编辑表单中 Key 均脱敏展示，完整值只在此处明文回显一次）
+     */
+    private void showKeyDialog(ApiKey key) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("保存成功");
+        dialog.setWidth("520px");
+
+        TextField keyField = new TextField("ApiKey");
+        keyField.setValue(StrUtil.nullToEmpty(key.getApiKey()));
+        keyField.setReadOnly(true);
+        keyField.setWidthFull();
+        Button copy = new Button(new Icon(VaadinIcon.COPY));
+        copy.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        copy.setAriaLabel("复制 ApiKey");
+        copy.addClickListener(e -> {
+            UI.getCurrent().getPage().executeJs("navigator.clipboard.writeText($0)", key.getApiKey());
+            Notify.success("已复制到剪贴板");
+        });
+        keyField.setSuffixComponent(copy);
+
+        Paragraph hint = new Paragraph("请复制后妥善保管，列表中仅脱敏展示。");
+        hint.getStyle().set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-s)")
+                .set("margin", "0");
+        dialog.add(keyField, hint);
+
+        Button done = new Button("完成", e -> dialog.close());
+        done.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getFooter().add(done);
         dialog.open();
     }
 
