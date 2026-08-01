@@ -90,6 +90,14 @@
     overflow-y: auto;
     padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-xl);
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 对话测试分区：占满剩余高度，消息区在面板内部滚动 */
+.ac-chat {
+    flex: 1;
+    min-height: 0;
 }
 
 /* 顶部条：当前配置的智能体 */

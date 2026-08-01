@@ -112,6 +112,13 @@ public class ChatPanel extends VerticalLayout {
     }
 
     /**
+     * 锁定智能体下拉选择（配置页对话测试场景：固定为当前智能体，不可切换）
+     */
+    public void lockAgentSelect() {
+        agentSelect.setEnabled(false);
+    }
+
+    /**
      * 新开会话：清空消息，生成新的 sessionId
      */
     private void startSession(AgentInfo agent) {

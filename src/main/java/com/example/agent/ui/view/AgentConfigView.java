@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.example.agent.system.agent.AgentStateStoreFactory;
+import com.example.agent.system.chat.ChatService;
 import com.example.agent.system.dto.ToolInfo;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.CustomTool;
@@ -19,6 +20,7 @@ import com.example.agent.system.service.ModelConfigService;
 import com.example.agent.system.service.SkillRepoService;
 import com.example.agent.system.service.ToolService;
 import com.example.agent.ui.MainLayout;
+import com.example.agent.ui.chat.ChatPanel;
 import com.example.agent.ui.component.AgentAvatar;
 import com.example.agent.ui.component.Notify;
 import com.vaadin.flow.component.Component;
@@ -79,6 +81,7 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
     private static final String SECTION_KNOWLEDGE = "knowledge";
     private static final String SECTION_SKILL = "skill";
     private static final String SECTION_STORAGE = "storage";
+    private static final String SECTION_CHAT = "chat";
 
     /** 分区菜单项 */
     private record SectionDef(String key, String label, VaadinIcon icon) {
@@ -92,7 +95,8 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
             new SectionDef(SECTION_MCP, "MCP服务", VaadinIcon.BOLT),
             new SectionDef(SECTION_KNOWLEDGE, "知识库", VaadinIcon.BOOK),
             new SectionDef(SECTION_SKILL, "技能配置", VaadinIcon.LIGHTBULB),
-            new SectionDef(SECTION_STORAGE, "存储配置", VaadinIcon.DATABASE));
+            new SectionDef(SECTION_STORAGE, "存储配置", VaadinIcon.DATABASE),
+            new SectionDef(SECTION_CHAT, "对话测试", VaadinIcon.CHAT));
 
     /** 会话状态存储 -> 展示名 */
     private static final Map<String, String> STATE_STORE_NAMES = new LinkedHashMap<>() {{
@@ -139,6 +143,7 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
             "🎨", "🎮", "🏆", "⚙️", "🔧", "📦", "💬", "🛡️");
 
     private final AgentInfoService agentService;
+    private final ChatService chatService;
 
     /** 可选数据快照（打开页面时加载一次） */
     private final List<ModelConfig> models;
@@ -198,12 +203,15 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
     private Div agentBarAvatar;
     private Span agentBarName;
     private Span dirtyBadge;
+    /** 对话测试分区容器（内容依赖当前智能体，setParameter 后填充） */
+    private final Div chatSection = new Div();
 
     public AgentConfigView(AgentInfoService agentService, ModelConfigService modelService,
                            ToolService toolService, McpServerService mcpServerService,
                            KnowledgeBaseService knowledgeBaseService, SkillRepoService skillRepoService,
-                           CustomToolService customToolService) {
+                           CustomToolService customToolService, ChatService chatService) {
         this.agentService = agentService;
+        this.chatService = chatService;
         addClassName("ac-layout");
         setSizeFull();
         setPadding(false);
@@ -228,6 +236,8 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
         sections.put(SECTION_KNOWLEDGE, buildKnowledgeSection());
         sections.put(SECTION_SKILL, buildSkillSection());
         sections.put(SECTION_STORAGE, buildStorageSection());
+        chatSection.addClassName("ac-chat");
+        sections.put(SECTION_CHAT, chatSection);
 
         Div main = new Div();
         main.addClassName("ac-main");
@@ -262,6 +272,7 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
             selectedSkillRepoIds.addAll(parseIdArray(agent.getSkillRepos()));
         }
         populate();
+        buildChatContent();
         selectSection(event.getLocation().getQueryParameters()
                 .getSingleParameter("section").orElse(SECTION_BASIC));
         // 回填触发的脏标记复位
@@ -357,6 +368,23 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
     private String currentPath() {
         return "agent-config/" + (isNew || agent.getId() == null ? "new" : agent.getId())
                 + "?section=" + currentSection;
+    }
+
+    /**
+     * 对话测试分区内容：编辑态嵌入复用的对话面板（下拉锁定当前智能体）；
+     * 新建未保存时没有智能体实例，先展示提示。对话使用的是最近一次保存的配置。
+     */
+    private void buildChatContent() {
+        chatSection.removeAll();
+        if (isNew || agent.getId() == null) {
+            Span hint = new Span("保存智能体后可在此进行对话测试");
+            hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
+            chatSection.add(hint);
+            return;
+        }
+        ChatPanel chatPanel = new ChatPanel(List.of(agent), chatService, agent);
+        chatPanel.lockAgentSelect();
+        chatSection.add(chatPanel);
     }
 
     /** 返回列表：有未保存修改时先确认 */
@@ -995,6 +1023,8 @@ public class AgentConfigView extends HorizontalLayout implements HasUrlParameter
                     isNew = false;
                     getUI().ifPresent(ui -> ui.getPage().getHistory().replaceState(null, currentPath()));
                 }
+                // 新建保存后才有智能体实例，重建对话测试分区为可用状态
+                buildChatContent();
                 Notify.success("保存成功");
             } catch (Exception ex) {
                 Notify.error(ex.getMessage());
