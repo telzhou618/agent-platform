@@ -100,6 +100,22 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
                 .update();
     }
 
+    /** 修改头像：仅接受 http(s) 图片 URL，留空恢复默认（用户名首字） */
+    @OperationLog(module = "个人中心", action = "修改头像", summary = "#userId")
+    public void updateAvatar(Long userId, String avatar) {
+        if (StrUtil.isNotBlank(avatar)
+                && !avatar.startsWith("http://") && !avatar.startsWith("https://")) {
+            throw new IllegalArgumentException("头像需为 http(s) 图片 URL");
+        }
+        SysUser user = getById(userId);
+        if (user == null) {
+            throw new IllegalStateException("用户不存在");
+        }
+        lambdaUpdate().eq(SysUser::getId, userId)
+                .set(SysUser::getAvatar, StrUtil.blankToDefault(avatar, null))
+                .update();
+    }
+
     /** 修改密码：必须验证原密码（logParams=false：参数含明文密码，不落日志） */
     @OperationLog(module = "个人中心", action = "修改密码", summary = "#userId", logParams = false)
     public void changePassword(Long userId, String oldPassword, String newPassword) {

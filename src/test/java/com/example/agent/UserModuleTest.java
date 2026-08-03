@@ -93,6 +93,27 @@ class UserModuleTest {
         }
     }
 
+    /** 修改头像：仅接受 http(s) URL，留空恢复默认 */
+    @Test
+    void updateAvatar() {
+        SysUser user = new SysUser();
+        user.setUsername("avatar-test-user");
+        user.setPassword(BCrypt.hashpw("old-123"));
+        sysUserService.save(user);
+        try {
+            assertThrows(IllegalArgumentException.class,
+                    () -> sysUserService.updateAvatar(user.getId(), "not-a-url"), "非 URL 应拦截");
+
+            sysUserService.updateAvatar(user.getId(), "https://example.com/a.png");
+            assertEquals("https://example.com/a.png", sysUserService.getById(user.getId()).getAvatar());
+
+            sysUserService.updateAvatar(user.getId(), "");
+            assertNull(sysUserService.getById(user.getId()).getAvatar(), "留空应恢复默认");
+        } finally {
+            sysUserService.removeById(user.getId());
+        }
+    }
+
     /** 修改密码：原密码错误应拦截，正确则生效 */
     @Test
     void changePassword() {

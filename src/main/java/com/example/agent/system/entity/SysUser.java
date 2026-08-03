@@ -22,6 +22,9 @@ public class SysUser extends BaseEntity {
     /** 邮箱 */
     private String email;
 
+    /** 头像图片 URL，空则取用户名首字 */
+    private String avatar;
+
     /** 是否管理员：1 是 0 否 */
     private Integer isAdmin;
 }

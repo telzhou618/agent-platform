@@ -17,6 +17,7 @@ create table sys_user (
     password    varchar(128) not null comment '密码（BCrypt）',
     phone       varchar(32)  null comment '手机号',
     email       varchar(128) null comment '邮箱',
+    avatar      varchar(512) null comment '头像图片 URL，空则取用户名首字',
     is_admin    tinyint      not null default 0 comment '是否管理员：1 是 0 否',
     create_time datetime     null comment '创建时间',
     update_time datetime     null comment '更新时间',
