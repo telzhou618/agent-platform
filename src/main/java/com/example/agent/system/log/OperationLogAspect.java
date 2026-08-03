@@ -1,5 +1,8 @@
 package com.example.agent.system.log;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.example.agent.system.auth.LoginHelper;
 import com.example.agent.system.auth.LoginUser;
 import com.example.agent.system.service.OperationLogService;
@@ -17,7 +20,9 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -35,6 +40,11 @@ public class OperationLogAspect {
     private static final Map<String, Expression> SPEL_CACHE = new ConcurrentHashMap<>();
     /** 摘要 / 失败原因的最大落库长度 */
     private static final int MAX_TEXT_LENGTH = 500;
+    /** 参数 JSON 的最大落库长度 */
+    private static final int MAX_PARAMS_LENGTH = 4000;
+    /** 参数 JSON 中需要脱敏的字段名（小写） */
+    private static final Set<String> SENSITIVE_KEYS = Set.of(
+            "password", "apikey", "api_key", "secret", "token");
 
     private final OperationLogService operationLogService;
 
@@ -65,6 +75,7 @@ public class OperationLogAspect {
             entry.setModule(opLog.module());
             entry.setAction(opLog.action());
             entry.setSummary(truncate(evalSummary(pjp, opLog.summary())));
+            entry.setParams(opLog.logParams() ? truncate(paramsJson(pjp.getArgs())) : null);
             entry.setSuccess(success ? 1 : 0);
             entry.setErrorMsg(truncate(errorMsg));
             entry.setCreateTime(LocalDateTime.now());
@@ -101,5 +112,35 @@ public class OperationLogAspect {
             return text;
         }
         return text.substring(0, MAX_TEXT_LENGTH);
+    }
+
+    /** 方法参数 -> JSON 数组字符串，敏感字段值替换为 ******；序列化失败降级为 null */
+    private static String paramsJson(Object[] args) {
+        if (args == null || args.length == 0) {
+            return null;
+        }
+        try {
+            Object json = JSON.parse(JSON.toJSONString(args));
+            maskSensitive(json);
+            String text = json.toString();
+            return text.length() <= MAX_PARAMS_LENGTH ? text : text.substring(0, MAX_PARAMS_LENGTH);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 递归脱敏：JSONObject 中命中敏感字段名的值替换为 ****** */
+    private static void maskSensitive(Object node) {
+        if (node instanceof JSONObject obj) {
+            for (String key : new ArrayList<>(obj.keySet())) {
+                if (SENSITIVE_KEYS.contains(key.toLowerCase())) {
+                    obj.put(key, "******");
+                } else {
+                    maskSensitive(obj.get(key));
+                }
+            }
+        } else if (node instanceof JSONArray arr) {
+            arr.forEach(OperationLogAspect::maskSensitive);
+        }
     }
 }

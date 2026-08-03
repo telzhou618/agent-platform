@@ -180,6 +180,7 @@ create table operation_log (
     module      varchar(32)  not null comment '模块，如 模型管理',
     action      varchar(16)  not null comment '操作，如 保存/删除/登录',
     summary     varchar(512) null comment '操作摘要，如 模型名称',
+    params      text         null comment '完整方法参数（JSON 数组，敏感字段脱敏）',
     success     tinyint      not null default 1 comment '是否成功：1 成功 0 失败',
     error_msg   varchar(512) null comment '失败原因',
     create_time datetime     null comment '操作时间',

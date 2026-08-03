@@ -30,6 +30,9 @@ public class OperationLog {
     /** 操作摘要，如 模型名称 */
     private String summary;
 
+    /** 完整方法参数（JSON 数组，敏感字段脱敏；logParams=false 时为 null） */
+    private String params;
+
     /** 是否成功：1 成功 0 失败 */
     private Integer success;
 

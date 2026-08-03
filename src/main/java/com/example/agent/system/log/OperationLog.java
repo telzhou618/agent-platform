@@ -25,4 +25,7 @@ public @interface OperationLog {
 
     /** true 时方法返回 null 记为失败（用于 authenticate 等以 null 表示失败的场景） */
     boolean successByResult() default false;
+
+    /** true（默认）记录完整方法参数（JSON，敏感字段脱敏）；明文密码等标量凭证参数应设为 false */
+    boolean logParams() default true;
 }

@@ -61,6 +61,7 @@ public class OperationLogView extends VerticalLayout implements BeforeEnterObser
         grid.addColumn(OperationLog::getModule).setHeader("模块").setWidth("140px").setFlexGrow(0);
         grid.addColumn(OperationLog::getAction).setHeader("操作").setWidth("90px").setFlexGrow(0);
         grid.addColumn(l -> StrUtil.nullToEmpty(l.getSummary())).setHeader("摘要");
+        grid.addComponentColumn(this::paramsCell).setHeader("参数");
         grid.addComponentColumn(this::resultBadge).setHeader("结果").setWidth("100px").setFlexGrow(0);
         grid.addColumn(l -> DateUtil.format(l.getCreateTime(), "yyyy-MM-dd HH:mm:ss")).setHeader("操作时间")
                 .setWidth("190px").setFlexGrow(0);
@@ -77,6 +78,17 @@ public class OperationLogView extends VerticalLayout implements BeforeEnterObser
         if (!LoginHelper.isAdmin()) {
             event.rerouteTo("");
         }
+    }
+
+    /** 参数单元格：截断显示，悬停查看完整 JSON */
+    private Component paramsCell(OperationLog log) {
+        String params = StrUtil.nullToEmpty(log.getParams());
+        Span cell = new Span(StrUtil.maxLength(params, 60));
+        cell.getStyle().set("font-family", "monospace").set("font-size", "var(--lumo-font-size-xs)");
+        if (StrUtil.isNotBlank(params)) {
+            cell.getElement().setAttribute("title", params);
+        }
+        return cell;
     }
 
     /** 结果徽标：成功绿 / 失败红，失败悬停显示原因 */

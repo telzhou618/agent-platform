@@ -1,5 +1,6 @@
 package com.example.agent.system.service;
 
+import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -66,8 +67,8 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
         removeById(id);
     }
 
-    /** 登录认证：成功返回用户，失败返回 null */
-    @OperationLog(module = "用户登录", action = "登录", summary = "#username", successByResult = true)
+    /** 登录认证：成功返回用户，失败返回 null（logParams=false：参数含明文密码，不落日志） */
+    @OperationLog(module = "用户登录", action = "登录", summary = "#username", successByResult = true, logParams = false)
     public SysUser authenticate(String username, String rawPassword) {
         if (StrUtil.isBlank(username) || StrUtil.isBlank(rawPassword)) {
             return null;
@@ -77,6 +78,43 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
             return null;
         }
         return user;
+    }
+
+    /** 修改个人资料：手机号/邮箱仅校验格式不校验真实性，留空表示清除 */
+    @OperationLog(module = "个人中心", action = "修改资料", summary = "#userId")
+    public void updateProfile(Long userId, String phone, String email) {
+        if (StrUtil.isNotBlank(phone) && !Validator.isMobile(phone)) {
+            throw new IllegalArgumentException("手机号格式不正确");
+        }
+        if (StrUtil.isNotBlank(email) && !Validator.isEmail(email)) {
+            throw new IllegalArgumentException("邮箱格式不正确");
+        }
+        SysUser user = getById(userId);
+        if (user == null) {
+            throw new IllegalStateException("用户不存在");
+        }
+        // updateById 会忽略 null 字段，留空清除需走 UpdateWrapper 显式 set
+        lambdaUpdate().eq(SysUser::getId, userId)
+                .set(SysUser::getPhone, StrUtil.blankToDefault(phone, null))
+                .set(SysUser::getEmail, StrUtil.blankToDefault(email, null))
+                .update();
+    }
+
+    /** 修改密码：必须验证原密码（logParams=false：参数含明文密码，不落日志） */
+    @OperationLog(module = "个人中心", action = "修改密码", summary = "#userId", logParams = false)
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (StrUtil.isBlank(newPassword)) {
+            throw new IllegalArgumentException("新密码不能为空");
+        }
+        SysUser user = getById(userId);
+        if (user == null) {
+            throw new IllegalStateException("用户不存在");
+        }
+        if (StrUtil.isBlank(oldPassword) || !BCrypt.checkpw(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("原密码不正确");
+        }
+        user.setPassword(BCrypt.hashpw(newPassword));
+        updateById(user);
     }
 
     private void checkAdmin() {

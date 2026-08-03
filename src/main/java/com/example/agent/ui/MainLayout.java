@@ -65,20 +65,19 @@ public class MainLayout extends AppLayout {
         header.expand(logo);
         header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
 
-        // 右侧：当前登录用户 + 退出
+        // 右侧：当前登录用户（点击进入个人主页）+ 退出
         LoginUser currentUser = LoginHelper.currentUser();
         if (currentUser != null) {
-            Span username = new Span(currentUser.getUsername()
-                    + (LoginHelper.isAdmin() ? "（管理员）" : ""));
-            username.getStyle()
-                    .set("color", "var(--lumo-secondary-text-color)")
-                    .set("font-size", "var(--lumo-font-size-s)");
+            Button account = new Button(currentUser.getUsername()
+                    + (LoginHelper.isAdmin() ? "（管理员）" : ""),
+                    new Icon(VaadinIcon.USER), e -> getUI().ifPresent(ui -> ui.navigate("profile")));
+            account.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
             Button logout = new Button("退出", new Icon(VaadinIcon.SIGN_OUT), e -> {
                 LoginHelper.logout();
                 getUI().ifPresent(ui -> ui.navigate("login"));
             });
             logout.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-            header.add(username, logout);
+            header.add(account, logout);
         }
         addToNavbar(header);
 
