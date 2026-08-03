@@ -40,6 +40,7 @@ import java.time.Year;
  */
 @StyleSheet("context://styles/side-nav.css")
 @StyleSheet("context://styles/app-grid.css")
+@StyleSheet("context://styles/app-dialog.css")
 @StyleSheet("context://styles/chat.css")
 @StyleSheet("context://styles/markdown.css")
 @StyleSheet("context://styles/agent-panel.css")
