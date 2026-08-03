@@ -24,13 +24,10 @@ public class ChatView extends VerticalLayout implements HasUrlParameter<Long> {
 
     public ChatView(AgentInfoService agentInfoService, ChatService chatService) {
         setSizeFull();
-
-        H2 title = new H2("流式对话");
-        title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xl)");
-
+        setPadding(false);
+        setMargin(false);
         chatPanel = new ChatPanel(agentInfoService.listEnabled(), chatService, null);
-
-        add(title, chatPanel);
+        add(chatPanel);
         expand(chatPanel);
     }
 

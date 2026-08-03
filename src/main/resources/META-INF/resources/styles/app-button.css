@@ -1,0 +1,70 @@
+/* ============ 全局按钮：与蓝紫渐变 / 白卡规范统一 ============ */
+
+/* 基础：圆角 + 交互过渡 */
+vaadin-button {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+        box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+vaadin-button[disabled] {
+    cursor: default;
+}
+
+/* ---------- 主按钮：蓝紫渐变 + 投影 + 悬停上浮（与菜单选中态 / 看板同语言） ---------- */
+vaadin-button[theme~="primary"]:not([theme~="error"]):not([theme~="success"]) {
+    background: linear-gradient(135deg, #4c6ef5, #7048e8);
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.35);
+}
+
+vaadin-button[theme~="primary"]:not([theme~="error"]):not([theme~="success"]):not([disabled]):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(76, 110, 245, 0.45);
+}
+
+/* ---------- 危险主按钮（删除确认等）：保持红色语义，统一投影与上浮 ---------- */
+vaadin-button[theme~="primary"][theme~="error"] {
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(224, 49, 49, 0.3);
+}
+
+vaadin-button[theme~="primary"][theme~="error"]:not([disabled]):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(224, 49, 49, 0.4);
+}
+
+/* ---------- 成功主按钮：保持绿色语义，统一投影 ---------- */
+vaadin-button[theme~="primary"][theme~="success"] {
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(47, 158, 68, 0.28);
+}
+
+/* ---------- 次要按钮（搜索、检测等默认主题）：白底细边，悬停主色边 + 主色淡底 ---------- */
+vaadin-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]):not([theme~="icon"]) {
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-20pct);
+    color: var(--lumo-body-text-color);
+}
+
+vaadin-button:not([theme~="primary"]):not([theme~="tertiary"]):not([theme~="tertiary-inline"]):not([theme~="icon"]):not([disabled]):hover {
+    background: var(--lumo-primary-color-10pct);
+    border-color: var(--lumo-primary-color-50pct);
+    color: var(--lumo-primary-text-color);
+}
+
+/* ---------- 三级按钮（文字按钮）：主色文字，悬停主色淡底 ---------- */
+vaadin-button[theme~="tertiary"]:not([theme~="error"]) {
+    color: var(--lumo-primary-text-color);
+}
+
+vaadin-button[theme~="tertiary"]:not([theme~="error"]):not([disabled]):hover {
+    background: var(--lumo-primary-color-10pct);
+}
+
+/* 三级危险按钮（列表删除等）：保持红字，悬停红色淡底 */
+vaadin-button[theme~="tertiary"][theme~="error"]:not([disabled]):hover {
+    background: var(--lumo-error-color-10pct);
+}
