@@ -6,6 +6,7 @@ import com.example.agent.system.entity.SysUser;
 import com.example.agent.system.service.SysUserService;
 import com.example.agent.ui.MainLayout;
 import com.example.agent.ui.component.AgentAvatar;
+import com.example.agent.ui.component.FormValidators;
 import com.example.agent.ui.component.Notify;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -17,16 +18,19 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import lombok.Data;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * 个人主页（简约卡片式）：顶部居中头像（默认取用户名首字，支持图片 URL 修改），
- * 下方信息行：用户名只读，手机号 / 邮箱脱敏展示、弹窗修改（仅格式校验），
+ * 下方信息行：用户名只读，手机号 / 邮箱脱敏展示、弹窗修改（Binder 表单校验格式），
  * 密码弹窗修改（需验证原密码）。右上角点击账号进入。
  */
 @Route(value = "profile", layout = MainLayout.class)
@@ -152,21 +156,45 @@ public class ProfileView extends VerticalLayout {
 
     private void openPhoneDialog() {
         TextField phone = new TextField("手机号");
-        phone.setValue(StrUtil.nullToEmpty(user.getPhone()));
+        phone.setPlaceholder("11 位手机号，留空表示不设置");
+        phone.setMaxLength(32);
         phone.setWidthFull();
+
+        Binder<SysUser> binder = new Binder<>(SysUser.class);
+        binder.forField(phone).withValidator(FormValidators.mobile())
+                .asRequired()
+                .bind(SysUser::getPhone, SysUser::setPhone);
+        binder.readBean(user);
+
         openEditDialog("修改手机号", phone, "保存", () -> {
-            sysUserService.updateProfile(user.getId(), phone.getValue().trim(), user.getEmail());
+            if (!binder.writeBeanIfValid(user)) {
+                return false;
+            }
+            sysUserService.updateProfile(user.getId(), user.getPhone().trim(), user.getEmail());
             reload();
+            return true;
         });
     }
 
     private void openEmailDialog() {
-        EmailField email = new EmailField("邮箱");
-        email.setValue(StrUtil.nullToEmpty(user.getEmail()));
+        TextField email = new TextField("邮箱");
+        email.setPlaceholder("name@example.com，留空表示不设置");
+        email.setMaxLength(128);
         email.setWidthFull();
+
+        Binder<SysUser> binder = new Binder<>(SysUser.class);
+        binder.forField(email).withValidator(FormValidators.email())
+                .asRequired()
+                .bind(SysUser::getEmail, SysUser::setEmail);
+        binder.readBean(user);
+
         openEditDialog("修改邮箱", email, "保存", () -> {
-            sysUserService.updateProfile(user.getId(), user.getPhone(), email.getValue().trim());
+            if (!binder.writeBeanIfValid(user)) {
+                return false;
+            }
+            sysUserService.updateProfile(user.getId(), user.getPhone(), user.getEmail().trim());
             reload();
+            return true;
         });
     }
 
@@ -190,6 +218,7 @@ public class ProfileView extends VerticalLayout {
         openEditDialog("修改头像", body, "保存", () -> {
             sysUserService.updateAvatar(user.getId(), url.getValue().trim());
             reload();
+            return true;
         });
     }
 
@@ -198,24 +227,49 @@ public class ProfileView extends VerticalLayout {
         oldPassword.setWidthFull();
         PasswordField newPassword = new PasswordField("新密码");
         newPassword.setWidthFull();
+        newPassword.setHelperText("至少 6 位");
         PasswordField confirmPassword = new PasswordField("确认新密码");
         confirmPassword.setWidthFull();
+
+        Binder<PasswordForm> binder = new Binder<>(PasswordForm.class);
+        binder.forField(oldPassword).asRequired("请输入原密码")
+                .bind(PasswordForm::getOldPassword, PasswordForm::setOldPassword);
+        binder.forField(newPassword).asRequired("请输入新密码")
+                .withValidator(FormValidators.passwordMin(6))
+                .bind(PasswordForm::getNewPassword, PasswordForm::setNewPassword);
+        binder.forField(confirmPassword).asRequired("请再次输入新密码")
+                .withValidator(v -> StrUtil.equals(v, newPassword.getValue()), "两次输入的新密码不一致")
+                .bind(PasswordForm::getConfirmPassword, PasswordForm::setConfirmPassword);
+        oldPassword.setRequiredIndicatorVisible(true);
+        newPassword.setRequiredIndicatorVisible(true);
+        confirmPassword.setRequiredIndicatorVisible(true);
+
         VerticalLayout body = new VerticalLayout(oldPassword, newPassword, confirmPassword);
         body.setPadding(false);
         openEditDialog("修改密码", body, "确认修改", () -> {
-            if (!newPassword.getValue().equals(confirmPassword.getValue())) {
-                Notify.error("两次输入的新密码不一致");
-                return;
+            PasswordForm form = new PasswordForm();
+            if (!binder.writeBeanIfValid(form)) {
+                return false;
             }
-            sysUserService.changePassword(user.getId(), oldPassword.getValue(), newPassword.getValue());
+            sysUserService.changePassword(user.getId(), form.getOldPassword(), form.getNewPassword());
             reload();
+            return true;
         });
     }
 
+    /** 修改密码表单 */
+    @Data
+    private static class PasswordForm {
+        private String oldPassword;
+        private String newPassword;
+        private String confirmPassword;
+    }
+
     /**
-     * 通用编辑弹窗：标题 + 内容 + 确认按钮；onConfirm 抛异常时提示并保持弹窗打开
+     * 通用编辑弹窗：标题 + 内容 + 确认按钮；onConfirm 返回 false（表单校验未通过）或抛异常时
+     * 提示并保持弹窗打开，返回 true 才关闭
      */
-    private void openEditDialog(String title, Component content, String okText, Runnable onConfirm) {
+    private void openEditDialog(String title, Component content, String okText, BooleanSupplier onConfirm) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle(title);
         dialog.setWidth("420px");
@@ -223,11 +277,15 @@ public class ProfileView extends VerticalLayout {
 
         Button cancel = new Button("取消", e -> dialog.close());
         Button ok = new Button(okText, e -> {
+            boolean okToClose;
             try {
-                onConfirm.run();
-                dialog.close();
+                okToClose = onConfirm.getAsBoolean();
             } catch (Exception ex) {
                 Notify.error(ex.getMessage());
+                return;
+            }
+            if (okToClose) {
+                dialog.close();
             }
         });
         ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
