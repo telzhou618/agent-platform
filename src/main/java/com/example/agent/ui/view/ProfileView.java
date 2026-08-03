@@ -41,7 +41,7 @@ public class ProfileView extends VerticalLayout {
         this.user = sysUserService.getById(LoginHelper.currentUserId());
 
         setSizeFull();
-        setAlignItems(Alignment.CENTER);
+        setAlignItems(Alignment.STRETCH);
 
         Div card = new Div();
         card.getStyle()
@@ -49,7 +49,6 @@ public class ProfileView extends VerticalLayout {
                 .set("border", "1px solid var(--lumo-contrast-10pct)")
                 .set("border-radius", "16px")
                 .set("padding", "var(--lumo-space-xl)")
-                .set("max-width", "720px")
                 .set("width", "100%")
                 .set("box-sizing", "border-box");
 
@@ -64,7 +63,9 @@ public class ProfileView extends VerticalLayout {
         add(card);
     }
 
-    /** 头部：居中头像 + 用户名 + 修改头像入口 */
+    /**
+     * 头部：居中头像 + 用户名 + 修改头像入口
+     */
     private Component buildHeader() {
         Button editAvatar = new Button("修改头像", e -> openAvatarDialog());
         editAvatar.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
@@ -90,7 +91,9 @@ public class ProfileView extends VerticalLayout {
         return divider;
     }
 
-    /** 信息行：左侧标签 + 值，右侧修改按钮；last=true 时不画底线 */
+    /**
+     * 信息行：左侧标签 + 值，右侧修改按钮；last=true 时不画底线
+     */
     private Component infoRow(String label, String value, boolean unset, Button action, boolean last) {
         Span labelSpan = new Span(label);
         labelSpan.getStyle().set("color", "var(--lumo-secondary-text-color)").set("width", "5em");
@@ -122,7 +125,9 @@ public class ProfileView extends VerticalLayout {
         return masked == null ? "未设置" : masked;
     }
 
-    /** 手机号脱敏：保留前 3 后 4，如 198****4847 */
+    /**
+     * 手机号脱敏：保留前 3 后 4，如 198****4847
+     */
     private static String maskPhone(String phone) {
         if (StrUtil.isBlank(phone)) {
             return null;
@@ -132,7 +137,9 @@ public class ProfileView extends VerticalLayout {
                 : "****";
     }
 
-    /** 邮箱脱敏：保留首字符与域名，如 5******5@qq.com -> 5******@qq.com */
+    /**
+     * 邮箱脱敏：保留首字符与域名，如 5******5@qq.com -> 5******@qq.com
+     */
     private static String maskEmail(String email) {
         if (StrUtil.isBlank(email)) {
             return null;
@@ -228,7 +235,9 @@ public class ProfileView extends VerticalLayout {
         dialog.open();
     }
 
-    /** 保存成功后刷新页面，重新加载最新资料 */
+    /**
+     * 保存成功后刷新页面，重新加载最新资料
+     */
     private void reload() {
         Notify.success("已保存");
         UI.getCurrent().getPage().reload();
