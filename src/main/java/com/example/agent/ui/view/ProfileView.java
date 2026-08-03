@@ -162,7 +162,7 @@ public class ProfileView extends VerticalLayout {
 
         Binder<SysUser> binder = new Binder<>(SysUser.class);
         binder.forField(phone).withValidator(FormValidators.mobile())
-                .asRequired()
+                .asRequired("手机号码不能为空")
                 .bind(SysUser::getPhone, SysUser::setPhone);
         binder.readBean(user);
 
@@ -184,7 +184,7 @@ public class ProfileView extends VerticalLayout {
 
         Binder<SysUser> binder = new Binder<>(SysUser.class);
         binder.forField(email).withValidator(FormValidators.email())
-                .asRequired()
+                .asRequired("邮箱不能为空")
                 .bind(SysUser::getEmail, SysUser::setEmail);
         binder.readBean(user);
 
