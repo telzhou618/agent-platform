@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 知识库检索器：平台自有的知识库抽象，替代 AgentScope 2.0 已废弃的
  * io.agentscope.core.rag.Knowledge 接口。底层实现直接复用扩展包中未废弃的
- * BailianClient / DifyRAGClient，官方新 RAG 模块落地后只需替换实现层。
+ * BailianClient / DeifyRAGClient，官方新 RAG 模块落地后只需替换实现层。
  */
 public interface KnowledgeRetriever {
 

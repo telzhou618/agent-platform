@@ -93,7 +93,7 @@ public class BailianKnowledgeRetriever implements KnowledgeRetriever {
         StringBuilder text = new StringBuilder();
         for (ContentBlock block : msg.getContent()) {
             if (block instanceof TextBlock textBlock) {
-                if (text.length() > 0) {
+                if (!text.isEmpty()) {
                     text.append("\n");
                 }
                 text.append(textBlock.getText());
