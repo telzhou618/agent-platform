@@ -2,6 +2,9 @@ package com.example.agent.system.agent;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.example.agent.system.agent.knowledge.AggregatedKnowledgeRetriever;
+import com.example.agent.system.agent.knowledge.KnowledgeRetrieveTool;
+import com.example.agent.system.agent.knowledge.KnowledgeRetriever;
 import com.example.agent.system.entity.AgentInfo;
 import com.example.agent.system.entity.CustomTool;
 import com.example.agent.system.entity.KnowledgeBase;
@@ -10,8 +13,6 @@ import com.example.agent.system.entity.ModelConfig;
 import com.example.agent.system.entity.SkillRepo;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
-import io.agentscope.core.rag.Knowledge;
-import io.agentscope.core.rag.KnowledgeRetrievalTools;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.Toolkit;
 import io.agentscope.core.tool.mcp.McpClientWrapper;
@@ -218,11 +219,9 @@ public class AgentRegistry {
     /**
      * 组装实例：系统提示词 + 模型 + 专属工具箱（配置的系统工具 + 各 MCP 服务的工具 + 知识库检索工具）
      * + 技能仓库（HarnessAgent 官方技能体系）。
-     * 知识库：HarnessAgent.Builder 无 knowledge()，与 ReActAgent AGENTIC 模式等价，
-     * 把聚合后的 KnowledgeRetrievalTools 注册进工具箱，模型通过 retrieve_knowledge 工具自主检索。
+     * 知识库：HarnessAgent.Builder 无 knowledge()，把聚合后的检索器包装成 retrieve_knowledge
+     * 工具注册进工具箱，模型自主决定何时检索（与原 ReActAgent AGENTIC 模式等价）。
      */
-    // AgentScope 2.0.0 的 RAG API 标记为 deprecated-for-removal 但功能正常，按计划使用
-    @SuppressWarnings("deprecation")
     private HarnessAgent build(AgentInfo agent, Model model, List<McpServer> mcpServers,
                                List<KnowledgeBase> knowledgeBases, List<SkillRepo> skillRepos,
                                List<CustomTool> customTools, List<McpClientWrapper> clientsOut) {
@@ -262,18 +261,18 @@ public class AgentRegistry {
             }
         }
         // 挂载知识库：聚合成一个检索工具注册进工具箱；单个构建失败只记日志跳过
-        List<Knowledge> knowledges = new ArrayList<>();
+        List<KnowledgeRetriever> retrievers = new ArrayList<>();
         for (KnowledgeBase kb : knowledgeBases) {
             try {
-                knowledges.add(knowledgeFactory.fromConfig(kb));
+                retrievers.add(knowledgeFactory.fromConfig(kb));
                 log.info("智能体「{}」挂载知识库「{}」", agent.getName(), kb.getName());
             } catch (Exception e) {
                 log.warn("智能体「{}」挂载知识库「{}」失败，已跳过：{}",
                         agent.getName(), kb.getName(), e.getMessage());
             }
         }
-        if (!knowledges.isEmpty()) {
-            agentToolkit.registerTool(new KnowledgeRetrievalTools(new AggregatedKnowledge(knowledges)));
+        if (!retrievers.isEmpty()) {
+            agentToolkit.registerTool(new KnowledgeRetrieveTool(new AggregatedKnowledgeRetriever(retrievers)));
         }
         HarnessAgent.Builder builder = HarnessAgent.builder()
                 .name(agent.getName())

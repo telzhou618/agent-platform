@@ -3,29 +3,34 @@ package com.example.agent.system.agent;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.example.agent.system.agent.knowledge.BailianKnowledgeRetriever;
+import com.example.agent.system.agent.knowledge.DifyKnowledgeRetriever;
+import com.example.agent.system.agent.knowledge.KnowledgeRetriever;
 import com.example.agent.system.entity.KnowledgeBase;
-import io.agentscope.core.rag.Knowledge;
 import io.agentscope.core.rag.integration.bailian.BailianConfig;
-import io.agentscope.core.rag.integration.bailian.BailianKnowledge;
-import io.agentscope.core.rag.integration.dify.DifyKnowledge;
 import io.agentscope.core.rag.integration.dify.DifyRAGConfig;
 import io.agentscope.core.rag.integration.dify.RetrievalMode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 按知识库配置（knowledge_base 表）构建 AgentScope Knowledge。
+ * 按知识库配置（knowledge_base 表）构建平台自有的 KnowledgeRetriever。
  * config 列为类型相关的 JSON 对象，按 type 分支构建；缺少必填配置时抛异常，
  * 由调用方（AgentRegistry）按"单个失败只记日志跳过"策略处理。
+ * 底层复用 AgentScope 扩展包中未废弃的 BailianClient / DifyRAGClient，
+ * 不再触碰 2.0 已废弃的 Knowledge / BailianKnowledge / DifyKnowledge。
  */
-// AgentScope 2.0.0 的 RAG API 标记为 deprecated-for-removal 但功能正常，按计划使用
-@SuppressWarnings("deprecation")
 @Slf4j
 @Component
 public class KnowledgeFactory {
 
-    /** 按类型构建知识库检索实例；类型未知或必填配置缺失时抛异常 */
-    public Knowledge fromConfig(KnowledgeBase kb) {
+    /**
+     * 检索分数过滤的默认阈值（与原官方 RetrieveConfig 默认值一致）
+     */
+    private static final double DEFAULT_SCORE_THRESHOLD = 0.5;
+
+    /** 按类型构建知识库检索器；类型未知或必填配置缺失时抛异常 */
+    public KnowledgeRetriever fromConfig(KnowledgeBase kb) {
         JSONObject config = StrUtil.isBlank(kb.getConfig())
                 ? new JSONObject() : JSONUtil.parseObj(kb.getConfig());
         return switch (StrUtil.nullToEmpty(kb.getType())) {
@@ -36,7 +41,7 @@ public class KnowledgeFactory {
     }
 
     /** 阿里云百炼：accessKeyId/accessKeySecret/workspaceId/indexId 必填，endpoint 选填 */
-    private Knowledge buildBailian(KnowledgeBase kb, JSONObject config) {
+    private KnowledgeRetriever buildBailian(KnowledgeBase kb, JSONObject config) {
         BailianConfig.Builder builder = BailianConfig.builder()
                 .accessKeyId(required(config, "accessKeyId"))
                 .accessKeySecret(required(config, "accessKeySecret"))
@@ -50,11 +55,11 @@ public class KnowledgeFactory {
         }
         builder.enableReranking(config.getBool("enableReranking"));
         builder.enableRewrite(config.getBool("enableRewrite"));
-        return BailianKnowledge.builder().config(builder.build()).build();
+        return new BailianKnowledgeRetriever(builder.build(), scoreThreshold(kb));
     }
 
     /** Dify：apiKey/datasetId 必填，baseUrl/retrievalMode/enableRerank 选填 */
-    private Knowledge buildDify(KnowledgeBase kb, JSONObject config) {
+    private KnowledgeRetriever buildDify(KnowledgeBase kb, JSONObject config) {
         DifyRAGConfig.Builder builder = DifyRAGConfig.builder()
                 .apiKey(required(config, "apiKey"))
                 .datasetId(required(config, "datasetId"))
@@ -69,7 +74,12 @@ public class KnowledgeFactory {
             builder.scoreThreshold(kb.getScoreThreshold());
         }
         builder.enableRerank(config.getBool("enableRerank"));
-        return DifyKnowledge.builder().config(builder.build()).build();
+        return new DifyKnowledgeRetriever(builder.build(), scoreThreshold(kb));
+    }
+
+    /** 客户端分数过滤阈值：未配置时用默认值 0.5 */
+    private double scoreThreshold(KnowledgeBase kb) {
+        return kb.getScoreThreshold() != null ? kb.getScoreThreshold() : DEFAULT_SCORE_THRESHOLD;
     }
 
     /** 检索模式字符串 -> 枚举，空或非法值回退混合检索 */
