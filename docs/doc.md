@@ -1,8 +1,6 @@
-# Java 版智能体平台平替？我用 AgentScope 2.0 + Vaadin 撸了一个 agent 管理后台
+# Java 版智能体平台平替？我用 AgentScope 2.0 + Vaadin 打造了一个 agent 管理后台
 
-想给智能体配个管理后台的时候，我先在 Java 生态里找了一圈现成的：Python 那边有 Dify、FastGPT，点几下就能用；Java 这边基本是空白，要么自己搭，要么咬牙切语言。
-
-正好阿里 AgentScope Java 2.0 发了正式版，我基于它写了这个 agent-platform：模型、智能体、工具、MCP 服务、知识库、技能仓库全在页面上配置，自带流式对话和数据看板。写的过程中踩了不少坑，也攒下一些 AgentScope 2.0 的真实用法，发出来给同样不想切技术栈的 Java 同学当个参考。
+阿里 AgentScope Java 2.0 发了正式版，我基于它写了这个 agent-platform：模型、智能体、工具、MCP 服务、知识库、技能仓库全在页面上配置，自带流式对话和数据看板。写的过程中踩了不少坑，也攒下一些 AgentScope 2.0 的真实用法，发出来给想学 Java Agent 开发的同学当个参考。
 
 ![首页数据看板](首页dashboard.png)
 
@@ -20,8 +18,7 @@
 
 ![智能体配置页](智能体配置页.png)
 
-模型管理支持九家供应商：DashScope、Kimi、DeepSeek、GLM、MiniMax、OpenAI、Anthropic、Gemini、Ollama。保存时平台会拿填的 key 真实调一次接口，填错了当场报错，不会拖到对话时才发现。
-
+模型管理支持九家供应商：DashScope、Kimi、DeepSeek、GLM、MiniMax、OpenAI、Anthropic、Gemini、Ollama。保存时平台会拿填的 key 真实调一次接口，填错了当场报错，不会拖到对话时才发现，也可以随意扩展。
 ![新增模型](新增模型弹框.png)
 
 知识库走 RAG 检索增强，目前支持阿里云百炼和 Dify 两种外部知识库。挂上之后，智能体拿到的是一个 retrieve_knowledge 工具，模型自己判断什么时候该去查，查到的内容带相关度分数。
